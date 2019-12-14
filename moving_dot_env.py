@@ -1,29 +1,8 @@
 
-
-# Part taken from adborghi fantastic implementation
-# https://github.com/aborghi/retro_contest_agent/blob/master/fastlearner/ppo2ttifrutti_sonic_env.py
 import numpy as np
 import gym
-from nes_py.wrappers import BinarySpaceToDiscreteSpaceEnv
-import gym_super_mario_bros
-from gym_super_mario_bros.actions import RIGHT_ONLY
-from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
-from baselines.common.atari_wrappers import FrameStack
-import flag
-import collections
 import collections
 from collections import deque
-import gym_moving_dot
-from baselines.common.distributions import make_pdtype
-
-
-# import gym_remote.client as grc
-
-
-# This will be useful for stacking frames
-# from baselines.common.atari_wrappers import FrameStack
-
-# Library used to modify frames (former times we used matplotlib)
 import cv2
 
 # setUseOpenCL = False means that we will not use GPU (disable OpenCL acceleration)
@@ -79,95 +58,16 @@ class RewardScaler(gym.RewardWrapper):
         return reward
 
 
-class AllowBacktracking(gym.Wrapper):
-    """
-    Use deltas in max(X) as the reward, rather than deltas
-    in X. This way, agents are not discouraged too heavily
-    from exploring backwards if there is no way to advance
-    head-on in the level.
-    """
-
-    def __init__(self, env):
-        super(AllowBacktracking, self).__init__(env)
-        self._cur_x = 0
-        self._max_x = 0
-        self.reward_q = collections.deque()
-
-
-    def reset(self, **kwargs):  # pylint: disable=E0202
-        self._cur_x = 0
-        self._max_x = 0
-        return self.env.reset(**kwargs)
-
-    def step(self, action):  # pylint: disable=E0202
-        obs, rew, done, info = self.env.step(action)
-        print(info)
-        # print("rew",rew)
-        # self._cur_x += rew
-        # rew = max(0, self._cur_x - self._max_x)
-        # self._max_x = max(self._max_x, self._cur_x)
-        # # print("real reward",rew)
-        stuck_flag =True
-
-
-
-        rew=(rew) /15  - 0.01
-       # rew=(rew) /15 -1
-        # rew=rew - 1
-        #if(len(self.reward_q)==10):
-         #   self.reward_q.popleft()
-        #self.reward_q.append(rew)
-
-       # for i in list(self.reward_q):
-
-            #if i > -0.01:
-             #   stuck_flag = False
-       # if stuck_flag:
-        #    rew=rew - 1.01
-
-        return obs,rew, done, info
-
-
 def make_env(env_idx):
-    """
-    Create an environment with some standard wrappers.
-    """
 
-
-    # Make the environment
-
-
-    #levelList = ['SuperMarioBros-1-1-v2','SuperMarioBros-2-1-v0','SuperMarioBros-3-1-v0','SuperMarioBros-4-1-v0','SuperMarioBros-5-1-v0','SuperMarioBros-6-1-v0','SuperMarioBros-7-1-v0','SuperMarioBros-8-1-v0']
-
-
-    # record_path = "./records/" + dicts[env_idx]['state']
 
     env = gym.make("MovingDot-v0")
-    #SuperMarioBros-v0
-    #SuperMarioBrosRandomStages
-    # env = BinarySpaceToDiscreteSpaceEnv(env,RIGHT_ONLY)
-
-    #env = BinarySpaceToDiscreteSpaceEnv(env, SIMPLE_MOVEMENT)
-
-    # env = RewardScaler(env)
-
-    # PreprocessFrame
     env = PreprocessFrame(env)
-
-
-    # Stack 4 frames
-    # env = FrameStack(env, 4)
-
-    # Allow back tracking that helps agents are not discouraged too heavily
-    # from exploring backwards if there is no way to advance
-    # head-on in the level.
-    #env = AllowBacktracking(env)
     return env
 
 
 def make_train_0():
     new_env=make_env(0)
-    # new_env = gym.wrappers.Monitor(new_env, "recording0")
     return new_env
 
 
@@ -233,39 +133,6 @@ def make_train_11():
 
 def make_train_12():
     return make_env(12)
-
-
-def make_test_level_Green():
-    return make_test()
-
-
-def make_test():
-    """
-    Create an environment with some standard wrappers.
-    """
-
-    # Make the environment
-    env = gym_super_mario_bros.make('SuperMarioBros-v0')
-    env = BinarySpaceToDiscreteSpaceEnv(env, RIGHT_ONLY)
-    print(env.action_space)
-    # Build the actions array
-    # env = ActionsDiscretizer(env)
-
-    # Scale the rewards
-    # env = RewardScaler(env)
-
-    # PreprocessFrame
-    env = PreprocessFrame(env)
-
-    # Stack 4 frames
-    env = FrameStack(env, 4)
-
-    # Allow back tracking that helps agents are not discouraged too heavily
-    # from exploring backwards if there is no way to advance
-    # head-on in the level.
-    # env = AllowBacktracking(env)
-
-    return env
 
 
 
