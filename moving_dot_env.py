@@ -8,7 +8,7 @@ import cv2
 # setUseOpenCL = False means that we will not use GPU (disable OpenCL acceleration)
 cv2.ocl.setUseOpenCL(False)
 import matplotlib.pyplot as plot
-
+import gym_moving_dot
 
 class PreprocessFrame(gym.ObservationWrapper):
     """
