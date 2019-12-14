@@ -143,7 +143,7 @@ class Trainer():
             np.random.shuffle(random_indexes)
             end=time.time()
 
-            print("time elapsed in game steps",end-start)
+            # print("time elapsed in game steps",end-start)
             start=time.time()
 
             observations_tensor=torch.from_numpy(np.array(observations_array)).float().to(self.device)
@@ -185,7 +185,7 @@ class Trainer():
             # print("----------------next training step--------------")
 
             end=time.time()
-            print("epoch time",end-start)
+            # print("epoch time",end-start)
             loss_avg_result=np.array(loss_avg).mean()
             policy_loss_avg_result=np.array(policy_loss_avg).mean()
             value_loss_avg_result=np.array(value_loss_avg).mean()
