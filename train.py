@@ -6,7 +6,7 @@ import numpy as np
 import flag
 import datetime
 import ray
-import moving_dot_env
+import mario_env
 from baselines import logger
 import time
 from torch.distributions.categorical import Categorical
@@ -15,7 +15,7 @@ from torch.distributions.categorical import Categorical
 @ray.remote
 class Simulator(object):
     def __init__(self,num_action_repeat):
-        self.env = moving_dot_env.make_train_0()
+        self.env = mario_env.make_train_0()
         self.env.reset()
         self.num_action_repeat=num_action_repeat
 

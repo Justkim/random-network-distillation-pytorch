@@ -38,7 +38,7 @@ if args.load:
 
 if flag.TRAIN:
     new_trainer = Trainer(num_training_steps=args.train_steps, num_env=args.num_env, num_game_steps=args.game_steps, num_epoch=args.num_epoch, learning_rate=args.lr
-                          , discount_factor=args.gamma, num_action=5, clip_range=args.clip_range, value_coef=args.value_coef,
+                          , discount_factor=args.gamma, num_action=7, clip_range=args.clip_range, value_coef=args.value_coef,
                           save_interval=args.save_int,
                           log_interval=args.log_int,
                           entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_size=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path)
