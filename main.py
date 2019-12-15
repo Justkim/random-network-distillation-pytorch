@@ -24,6 +24,7 @@ parser.add_argument("--ent_coef", default=0.05, type=float, help="This is entrop
 parser.add_argument("--log_int", default=10, type=int, help="This is log interval")
 parser.add_argument("--save_int", default=1, type=int, help="This is save interval")
 parser.add_argument("--action_re", default=1, type=int, help="This is number of action repeats")
+parser.add_argument("--train_steps", default=8000, type=int, help="This is number of train steps")
 parser.add_argument("--play", default=False,action="store_true",  help="use this if u want the network to play the game")
 parser.add_argument("--load", default=False,action="store_true", help="use this if u want to load a model to continue from")
 parser.add_argument("--path", default="",type=str, help="path of model to load / either for train or test")
@@ -36,7 +37,7 @@ if args.load:
     flag.LOAD=True
 
 if flag.TRAIN:
-    new_trainer = Trainer(num_training_steps=20000, num_env=args.num_env, num_game_steps=args.game_steps, num_epoch=args.num_epoch, learning_rate=args.lr
+    new_trainer = Trainer(num_training_steps=args.train_steps, num_env=args.num_env, num_game_steps=args.game_steps, num_epoch=args.num_epoch, learning_rate=args.lr
                           , discount_factor=args.gamma, num_action=5, clip_range=args.clip_range, value_coef=args.value_coef,
                           save_interval=args.save_int,
                           log_interval=args.log_int,
