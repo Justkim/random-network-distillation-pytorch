@@ -19,7 +19,8 @@ class Player:
             print("action choosen is",predicted_action)
             self.current_observation,rew,info,done=self.env.step(predicted_action)
             print("rewards is",rew)
-            self.env.render()
-            input()
+            if flag.SHOW_GAME:
+                self.env.render()
+
 
 
