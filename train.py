@@ -69,6 +69,18 @@ class Trainer():
         self.new_model = Model(self.num_action).to(self.device)
         self.optimizer = optim.Adam(self.new_model.parameters(), lr=self.learning_rate)
 
+        logger.record_tabular("time: ", self.current_time)
+        logger.record_tabular("num_env: ", self.num_env)
+        logger.record_tabular("steps: ", self.num_game_steps)
+        logger.record_tabular("mini batch: ", self.mini_batch_size)
+        logger.record_tabular("lr: ", self.learning_rate)
+        logger.record_tabular("gamma: ", self.discount_factor)
+        logger.record_tabular("lambda: ", self.lam)
+        logger.record_tabular("clip: ", self.clip_range)
+        logger.record_tabular("v_coef: ", self.value_coef)
+        logger.record_tabular("ent_coef: ", self.entropy_coef)
+        logger.dump_tabular()
+
     def collect_experiance_and_train(self):
         start_train_step = 0
 
