@@ -1,5 +1,5 @@
 DEBUG=False
-SHOW_GAME=False
+SHOW_GAME=True
 LOAD=False
 USE_GAE=True
 MARIO_ENV=True

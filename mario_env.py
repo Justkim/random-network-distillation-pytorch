@@ -87,7 +87,7 @@ def make_env(env_idx):
     # Make the environment
 
 
-    levelList = ['SuperMarioBros-1-1-v2','SuperMarioBros-2-1-v0','SuperMarioBros-3-1-v0','SuperMarioBros-4-1-v0','SuperMarioBros-5-1-v0','SuperMarioBros-6-1-v0','SuperMarioBros-7-1-v0','SuperMarioBros-8-1-v0']
+    levelList = ['SuperMarioBros-1-1-v0','SuperMarioBros-2-1-v0','SuperMarioBros-3-1-v0','SuperMarioBros-4-1-v0','SuperMarioBros-5-1-v0','SuperMarioBros-6-1-v0','SuperMarioBros-7-1-v0','SuperMarioBros-8-1-v0']
     env = gym_super_mario_bros.make(levelList[env_idx])
     env = BinarySpaceToDiscreteSpaceEnv(env, SIMPLE_MOVEMENT)
     env = PreprocessFrame(env)
