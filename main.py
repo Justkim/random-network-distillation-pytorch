@@ -28,6 +28,9 @@ parser.add_argument("--train_steps", default=8000, type=int, help="This is numbe
 parser.add_argument("--play", default=False,action="store_true",  help="use this if u want the network to play the game")
 parser.add_argument("--load", default=False,action="store_true", help="use this if u want to load a model to continue from")
 parser.add_argument("--path", default="",type=str, help="path of model to load / either for train or test")
+parser.add_argument("--ext_adv_coef", default=0.5,type=float, help="extrinsic advantage coef")
+parser.add_argument("--int_adv_coef", default=0.5,type=float, help="intrinsic advantage coef")
+parser.add_argument("--num_pre_norm_steps", default=50, type=int, help="This is the number of steps taken before game for initializing normilization")
 args=parser.parse_args()
 
 if args.play:
@@ -41,7 +44,7 @@ if flag.TRAIN:
                           , discount_factor=args.gamma, num_action=7, clip_range=args.clip_range, value_coef=args.value_coef,
                           save_interval=args.save_int,
                           log_interval=args.log_int,
-                          entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_size=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path)
+                          entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_size=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path, ext_adv_coef=args.ext_adv_coef,int_adv_coef=args.int_adv_coef,num_pre_norm_steps=args.num_pre_norm_steps)
     new_trainer.collect_experiance_and_train()
 elif flag.PLAY:
     env = moving_dot_env.make_train_0()

@@ -1,21 +1,32 @@
 
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.nn.init as init
 import numpy as np
 
 
 class TargetModel(nn.Module):
     def __init__(self,num_action):
-        super(Model,self).__init__()
+        super(TargetModel,self).__init__()
 
         self.num_action=num_action
 
-        self.conv1 = nn.Conv2d(4, 32, kernel_size=8, stride=4) #check this input di
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=8, stride=4) #check this input di
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
         self.fc1=nn.Linear(7*7*64,512)
         self.value= nn.Linear(512,1)
+        for p in self.modules():
+            if isinstance(p, nn.Conv2d):
+                init.orthogonal_(p.weight, np.sqrt(2))
+                p.bias.data.zero_()
 
+            if isinstance(p, nn.Linear):
+                init.orthogonal_(p.weight, np.sqrt(2))
+                p.bias.data.zero_()
+
+        for param in self.parameters():
+            param.requires_grad = False
 
     def forward_pass(self,input_observations):
         x=F.relu(self.conv1(input_observations))
@@ -29,13 +40,14 @@ class TargetModel(nn.Module):
 
 
 
+
 class PredictorModel(nn.Module):
     def __init__(self,num_action):
-        super(Model,self).__init__()
+        super(PredictorModel,self).__init__()
 
         self.num_action=num_action
 
-        self.conv1 = nn.Conv2d(4, 32, kernel_size=8, stride=4) #check this input di
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=8, stride=4) #check this input di
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
         self.fc1=nn.Linear(7*7*64,512)
