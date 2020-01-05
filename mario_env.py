@@ -206,13 +206,11 @@ def make_test():
 # new_env=make_env(0)
 # new_env.reset()
 # while True:
-#     a,b,c,d=new_env.step(3)
-#     a, b1, c, d = new_env.step(3)
-#     a, b2, c, d = new_env.step(3)
-#     print("reward is", b+b1+b2)
+#     a,b,c,d=new_env.step(int(input()))
+#     print(d)
 #     new_env.render()
 #
-#     time.sleep(1)
+
 
 #
 # while True:

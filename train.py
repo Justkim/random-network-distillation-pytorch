@@ -35,7 +35,7 @@ class Simulator(object):
 
 class Trainer():
     def __init__(self,num_training_steps,num_env,num_game_steps,num_epoch,
-                 learning_rate,discount_factor,num_action,
+                 learning_rate,discount_factor,int_discount_factor, num_action,
                  value_coef,clip_range,save_interval,log_interval,entropy_coef,lam,mini_batch_size,num_action_repeat,load_path,ext_adv_coef,int_adv_coef,num_pre_norm_steps):
         self.training_steps=num_training_steps
         self.num_epoch=num_epoch
@@ -50,6 +50,7 @@ class Trainer():
         self.mini_batch_size=mini_batch_size
         self.num_action=num_action
         self.num_pre_norm_steps=num_pre_norm_steps
+        self.int_discount_factor=int_discount_factor
 
         assert self.batch_size % self.mini_batch_size == 0
         self.mini_batch_num=int(self.batch_size / self.mini_batch_size)
@@ -83,6 +84,7 @@ class Trainer():
         logger.record_tabular("clip: ", self.clip_range)
         logger.record_tabular("v_coef: ", self.value_coef)
         logger.record_tabular("ent_coef: ", self.entropy_coef)
+
         logger.dump_tabular()
         self.target_model = TargetModel(self.num_action).to(self.device)
         self.predictor_model = PredictorModel(self.num_action).to(self.device)
@@ -100,7 +102,7 @@ class Trainer():
 
             self.new_model.load_state_dict(checkpoint['model_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            start_train_step= checkpoint['train_step']
+            start_train_step = checkpoint['train_step']
             print("loaded model weights from checkpoint")
 
         ray.init()
@@ -170,7 +172,8 @@ class Trainer():
                     # print("lalaaa",np.array(current_observations)[:,3,:,:].reshape(-1,1,84,84))
                     one_channel_observations=np.array(current_observations)[:,3,:,:].reshape(-1,1,84,84)
                     # print(one_channel_observations.shape)
-
+                    one_channel_observations = (
+                                (one_channel_observations - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5, 5)
                     one_channel_observations_tensor=torch.from_numpy(one_channel_observations).float().to(self.device)
                     print("lalalalala",one_channel_observations_tensor.shape)
                     int_rewards.append(self.get_intrinsic_rewards(one_channel_observations_tensor))
@@ -208,10 +211,11 @@ class Trainer():
             ext_values_array=np.array(ext_values)
             int_values_array = np.array(int_values)
             actions_array = np.array(actions)
-            print(np.array(int_rewards).shape)
+
             # Step 2. calculate intrinsic reward
             # running mean intrinsic reward
-            int_reward = np.stack(int_rewards).transpose()
+            int_reward = np.stack(int_rewards)
+
             total_reward_per_env = np.array([self.reward_filter.update(reward_per_step) for reward_per_step in
                                              int_reward.T])
             mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
@@ -219,9 +223,13 @@ class Trainer():
 
             # normalize intrinsic reward
             int_reward /= np.sqrt(self.reward_rms.var)
-            print(ext_rewards_array.shape)
-            print(ext_values_array.shape)
-
+            # print(ext_rewards_array.shape)
+            # print(ext_values_array.shape)
+            # print("ext_rewards",ext_rewards_array.shape)
+            # print("ext_values",ext_values_array)
+            # print("int_rewards", ext_rewards_array)
+            # print("int_values", ext_values_array)
+            # exit()
             ext_advantages_array,ext_returns_array=self.compute_advantage(ext_rewards_array,ext_values_array,dones_array,0)
             int_advantages_array, int_returns_array = self.compute_advantage(int_rewards_array, int_values_array,
                                                                              dones_array,1)
@@ -313,6 +321,7 @@ class Trainer():
                     logger.record_tabular("policy loss", policy_loss_avg_result)
                     logger.record_tabular("entropy", entropy_avg_result)
                     logger.record_tabular("rewards avg", np.average(ext_rewards))
+                    logger.record_tabular("int reward avg",np.average(int_rewards))
                     logger.dump_tabular()
 
 
@@ -328,12 +337,15 @@ class Trainer():
                 }, train_checkpoint_dir)
 
 
-    def compute_advantage(self, rewards, values, dones, int_flag):
+    def compute_advantage(self, rewards, values, dones, int_flag=0):
         if flag.DEBUG:
             print("---------computing advantage---------")
             print("rewards are",rewards)
             print("values from steps are",values)
-
+        if int_flag==1:
+            discount_factor=self.int_discount_factor
+        else:
+            discount_factor=self.discount_factor
         advantages = []
         last_advantage = 0
         for step in reversed(range(self.num_game_steps)):
@@ -341,9 +353,9 @@ class Trainer():
                 is_there_a_next_state = 1
             else:
                  is_there_a_next_state = 1.0 - dones[step]
-            delta = rewards[step] + (is_there_a_next_state * self.discount_factor * values[step + 1]) - values[step]
+            delta = rewards[step] + (is_there_a_next_state * discount_factor * values[step + 1]) - values[step]
             if flag.USE_GAE:
-                    advantage = last_advantage = delta + self.discount_factor * \
+                    advantage = last_advantage = delta + discount_factor * \
                                                  self.lam * is_there_a_next_state * last_advantage
                     advantages.append(advantage)
             else:
@@ -361,58 +373,50 @@ class Trainer():
 
 
     def train_model(self,observations_tensor,ext_returns_tensor,int_returns_tensor,actions_tensor,advantages_tensor,one_channel_observations_tensor, old_negative_log_p):
-
-            if flag.USE_STANDARD_ADV:
-                advantages_array=advantages_tensor.mean() / (advantages_tensor.std() + 1e-13)
-            # print("values from steps",values_array)
+            #
+            # if flag.USE_STANDARD_ADV:
+            #     advantages_array=advantages_tensor.mean() / (advantages_tensor.std() + 1e-13)
+            # # print("values from steps",values_array)
 
             if flag.DEBUG:
                 print("input observations shape", observations_tensor.shape)
-                print("input rewards shape", ext_returns_tensor.shape)
+                print("ext returns shape", ext_returns_tensor.shape)
+                print("int returns shape", int_returns_tensor.shape)
                 print("input actions shape", actions_tensor.shape)
                 print("input advantages shape", advantages_tensor.shape)
-
-                print("returns",ext_returns_tensor)
-                print("advantages",advantages_tensor)
-                print("actions",actions_tensor)
+                print("one channel observations", one_channel_observations_tensor.shape)
+                print("old negative log p", old_negative_log_p.shape)
 
 
-            loss,policy_loss,value_loss,entropy=self.do_train(observations_tensor,ext_returns_tensor,int_returns_tensor,actions_tensor, advantages_tensor,one_channel_observations_tensor, old_negative_log_p)
-            return loss,policy_loss,value_loss,entropy
 
-    def do_train(self,observations,ext_returns,int_returns,actions, advantages, one_channel_observations, old_negative_log_p):
-        cross_entropy_loss = nn.CrossEntropyLoss()
+            cross_entropy_loss = nn.CrossEntropyLoss()
 
+            self.new_model.train()
+            self.predictor_model.train()
+            target_value = self.target_model.forward_pass(one_channel_observations_tensor)
+            predictor_value = self.predictor_model.forward_pass(one_channel_observations_tensor)
+            predictor_loss = self.mse_loss(predictor_value, target_value.detach())
 
-        self.new_model.train()
-        self.predictor_model.train()
-        target_value = self.target_model.forward_pass(one_channel_observations)
-        predictor_value = self.predictor_model.forward_pass(one_channel_observations)
-        predictor_loss = self.mse_loss(predictor_value, target_value.detach())
+            new_policy, ext_new_values, int_new_values = self.new_model.forward_pass(observations_tensor)
 
+            ext_value_loss = self.mse_loss(ext_new_values, ext_returns_tensor)
+            int_value_loss = self.mse_loss(int_new_values, int_returns_tensor)
+            value_loss = ext_value_loss + int_value_loss
+            new_negative_log_p = cross_entropy_loss(new_policy, actions_tensor)
+            ratio = torch.exp(old_negative_log_p - new_negative_log_p)
 
-        new_policy, ext_new_values, int_new_values = self.new_model.forward_pass(observations)
+            clipped_policy_loss = torch.clamp(ratio, 1.0 - self.clip_range, 1 + self.clip_range) * advantages_tensor
+            policy_loss = ratio * advantages_tensor
 
-        ext_value_loss=self.mse_loss(ext_new_values,ext_returns)
-        int_value_loss = self.mse_loss(int_new_values, ext_returns)
-        value_loss = ext_value_loss+int_value_loss
-        new_negative_log_p = cross_entropy_loss(new_policy,actions)
-        ratio= torch.exp(old_negative_log_p - new_negative_log_p)
-
-        clipped_policy_loss=torch.clamp(ratio,1.0-self.clip_range, 1+self.clip_range)*advantages
-        policy_loss=ratio*advantages
-
-        selected_policy_loss=-torch.min(clipped_policy_loss,policy_loss).mean()
-        dist = Categorical(logits=new_policy)
-        entropy=dist.entropy().mean()
-        loss = selected_policy_loss + self.value_coef*value_loss - self.entropy_coef * entropy + predictor_loss
-        self.optimizer.zero_grad()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm(self.new_model.parameters(),0.5)
-        self.optimizer.step()
-        return loss, policy_loss, value_loss, entropy
-
-
+            selected_policy_loss = -torch.min(clipped_policy_loss, policy_loss).mean()
+            dist = Categorical(logits=new_policy)
+            entropy = dist.entropy().mean()
+            loss = selected_policy_loss + self.value_coef * value_loss - self.entropy_coef * entropy + predictor_loss
+            self.optimizer.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm(self.new_model.parameters(), 0.5)
+            self.optimizer.step()
+            return loss, policy_loss, value_loss, entropy
 
 
     def get_intrinsic_rewards(self,input_observation):

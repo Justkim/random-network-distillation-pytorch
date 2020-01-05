@@ -38,24 +38,26 @@ class Model(nn.Module):
         init.orthogonal_(self.int_value.weight, 0.01)
         self.int_value.bias.data.zero_()
 
+        init.orthogonal_(self.fc_actor.weight, 0.01)
+        self.fc_actor.bias.data.zero_()
 
+        init.orthogonal_(self.policy.weight, 0.01)
+        self.policy.bias.data.zero_()
+
+        init.orthogonal_(self.extra.weight, 0.1)
+        self.extra.bias.data.zero_()
 
     def forward_pass(self,input_observations):
         x=F.relu(self.conv1(input_observations))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
-        x=  x.view(x.size(0), -1)
+        x=  x.view(x.size(0), -1) #flatten
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-
-
         actor_policy = F.relu(self.fc_actor(x))
         policy = self.policy(actor_policy)
-
-
         predicted_int_value= self.int_value(F.relu(F.relu(self.extra(x))+x))[:,0]
-        predicted_ext_value = self.ext_value(F.relu(F.relu(self.extra(x)) + x))[:, 0]
-
+        predicted_ext_value = self.ext_value(F.relu(F.relu(self.extra(x)) + x)) [:,0]
         return policy,predicted_ext_value,predicted_int_value
 
     def step(self,observations):

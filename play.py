@@ -1,4 +1,5 @@
 from model import *
+import torch
 class Player:
     def __init__(self,env,load_path):
         self.env=env

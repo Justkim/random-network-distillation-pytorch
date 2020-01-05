@@ -10,13 +10,14 @@ flag.Load = False
 
 
 parser=argparse.ArgumentParser(description="train parser")
-parser.add_argument("--num_env", default=1, type=int, help="This is the number of workers")
-parser.add_argument("--game_steps", default=1, type=int, help="This is the number of steps in game "
+parser.add_argument("--num_env", default=2, type=int, help="This is the number of workers")
+parser.add_argument("--game_steps", default=3, type=int, help="This is the number of steps in game "
                                                                "for every training step")
 parser.add_argument("--num_epoch", default=1, type=int, help="This is the number of epoches")
-parser.add_argument("--mini_batch", default=1, type=int, help="This is mini batch size ")
+parser.add_argument("--mini_batch", default=6, type=int, help="This is mini batch size ")
 parser.add_argument("--lr", default=2e-4, type=float, help="This is optimizer learning rate")
 parser.add_argument("--gamma", default=0.99, type=float, help="This is discount factor")
+parser.add_argument("--int_gamma", default=0.99, type=float, help="This is the intrinsic discount factor")
 parser.add_argument("--lambda_gae", default=0.95, type=float, help="This is lambda in GAE")
 parser.add_argument("--clip_range", default=0.1, type=float, help="This is clip range for PPO")
 parser.add_argument("--value_coef", default=0.5, type=float, help="This is value coef")
@@ -41,7 +42,7 @@ if args.load:
 
 if flag.TRAIN:
     new_trainer = Trainer(num_training_steps=args.train_steps, num_env=args.num_env, num_game_steps=args.game_steps, num_epoch=args.num_epoch, learning_rate=args.lr
-                          , discount_factor=args.gamma, num_action=7, clip_range=args.clip_range, value_coef=args.value_coef,
+                          , discount_factor=args.gamma, int_discount_factor=args.int_gamma, num_action=7, clip_range=args.clip_range, value_coef=args.value_coef,
                           save_interval=args.save_int,
                           log_interval=args.log_int,
                           entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_size=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path, ext_adv_coef=args.ext_adv_coef,int_adv_coef=args.int_adv_coef,num_pre_norm_steps=args.num_pre_norm_steps)
