@@ -12,6 +12,7 @@ import time
 from torch.distributions.categorical import Categorical
 from rnd_model import TargetModel,PredictorModel
 from utils import RunningStdMean,RewardForwardFilter
+from torch.utils.tensorboard import SummaryWriter
 
 @ray.remote
 class Simulator(object):
@@ -21,13 +22,16 @@ class Simulator(object):
         self.num_action_repeat=num_action_repeat
 
     def step(self, action):
+        total_rewards=0
         for i in range(self.num_action_repeat):
             observations,rewards,dones,info=self.env.step(action)
+            total_rewards+=rewards
             if dones:
                 observations = self.reset()
+                break
         if flag.SHOW_GAME:
             self.env.render()
-        return observations, rewards, dones
+        return observations, total_rewards, dones
 
     def reset(self):
         return self.env.reset()
@@ -36,7 +40,7 @@ class Simulator(object):
 class Trainer():
     def __init__(self,num_training_steps,num_env,num_game_steps,num_epoch,
                  learning_rate,discount_factor,int_discount_factor, num_action,
-                 value_coef,clip_range,save_interval,log_interval,entropy_coef,lam,mini_batch_size,num_action_repeat,load_path,ext_adv_coef,int_adv_coef,num_pre_norm_steps):
+                 value_coef,clip_range,save_interval,log_interval,entropy_coef,lam,mini_batch_num,num_action_repeat,load_path,ext_adv_coef,int_adv_coef,num_pre_norm_steps):
         self.training_steps=num_training_steps
         self.num_epoch=num_epoch
         self.learning_rate=learning_rate
@@ -47,13 +51,13 @@ class Trainer():
         self.clip_range=clip_range
         self.value_coef=value_coef
         self.entropy_coef = entropy_coef
-        self.mini_batch_size=mini_batch_size
+        self.mini_batch_num=mini_batch_num
         self.num_action=num_action
         self.num_pre_norm_steps=num_pre_norm_steps
         self.int_discount_factor=int_discount_factor
 
-        assert self.batch_size % self.mini_batch_size == 0
-        self.mini_batch_num=int(self.batch_size / self.mini_batch_size)
+        assert self.batch_size % self.mini_batch_num== 0
+        self.mini_batch_size=int(self.batch_size / self.mini_batch_num)
         self.current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         log_dir = 'logs/' + self.current_time + '/log'
         logger.configure(dir=log_dir)
@@ -73,7 +77,7 @@ class Trainer():
         self.optimizer = optim.Adam(self.new_model.parameters(), lr=self.learning_rate)
         self.ext_adv_coef=ext_adv_coef
         self.int_adv_coef=int_adv_coef
-
+        self.writer = SummaryWriter('logs/' + self.current_time + '/log')
         logger.record_tabular("time: ", self.current_time)
         logger.record_tabular("num_env: ", self.num_env)
         logger.record_tabular("steps: ", self.num_game_steps)
@@ -92,7 +96,7 @@ class Trainer():
 
         self.reward_rms = RunningStdMean()
         self.obs_rms = RunningStdMean(shape=(1, 1, 84, 84))
-        self.reward_filter = RewardForwardFilter(0.99)
+        self.reward_filter = RewardForwardFilter(self.int_discount_factor)
 
     def collect_experiance_and_train(self):
         start_train_step = 0
@@ -122,7 +126,7 @@ class Trainer():
             returned_objects = []
             experiences=[]
             actions=np.random.randint(0,self.num_action,size=(self.num_env))
-            print(actions)
+
             for i in range(self.num_env):
                 returned_objects.append(runners[i].step.remote(actions[i]))
                 experiences.append(ray.get(returned_objects[i]))
@@ -130,7 +134,6 @@ class Trainer():
             observations_to_normalize.extend(current_observations)
             if(len(observations_to_normalize)%(self.num_game_steps*self.num_env)==0):
                 observations_to_normalize=np.stack(observations_to_normalize)[:,3,:,:].reshape(-1,1,84,84)
-                print(observations_to_normalize.shape)
                 self.obs_rms.update(observations_to_normalize)
                 observations_to_normalize=[]
 
@@ -164,7 +167,7 @@ class Trainer():
                 returned_objects = []
                 # observations.extend(current_observations)
                 observations.extend(current_observations)
-                print("very imp",np.array(current_observations).shape)
+                # print("very imp",np.array(current_observations).shape)
                 with torch.no_grad():
                     current_observations_tensor = torch.from_numpy(np.array(current_observations)).float().to(self.device)
                     decided_actions, predicted_ext_values, predicted_int_values = self.new_model.step(current_observations_tensor)
@@ -175,7 +178,7 @@ class Trainer():
                     one_channel_observations = (
                                 (one_channel_observations - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5, 5)
                     one_channel_observations_tensor=torch.from_numpy(one_channel_observations).float().to(self.device)
-                    print("lalalalala",one_channel_observations_tensor.shape)
+
                     int_rewards.append(self.get_intrinsic_rewards(one_channel_observations_tensor))
 
                 int_values.append(predicted_int_values)
@@ -203,7 +206,7 @@ class Trainer():
             # convert lists to numpy arrays
             observations_array=np.array(observations)
             one_channel_observations=observations_array[:,3,:,:].reshape(-1,1,84,84)
-            print("one channel observation shape",one_channel_observations.shape)
+            # print("one channel observation shape",one_channel_observations.shape)
             one_channel_observations = ((one_channel_observations - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5,5)
             ext_rewards_array = np.array(ext_rewards)
             int_rewards_array = np.array(int_rewards)
@@ -214,10 +217,11 @@ class Trainer():
 
             # Step 2. calculate intrinsic reward
             # running mean intrinsic reward
+
             int_reward = np.stack(int_rewards)
 
             total_reward_per_env = np.array([self.reward_filter.update(reward_per_step) for reward_per_step in
-                                             int_reward.T])
+                                             int_reward])
             mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
             self.reward_rms.update_from_mean_std(mean, std ** 2, count)
 
@@ -255,12 +259,12 @@ class Trainer():
             advantages_tensor=torch.from_numpy(np.array(advantages_array)).float().to(self.device)
             one_channel_observations_tensor=torch.from_numpy(one_channel_observations).float().to(self.device)
 
-            print(observations_tensor.shape)
-            print(ext_returns_tensor.shape)
-            print(int_returns_tensor.shape)
-            print(actions_tensor.shape)
-            print(advantages_tensor.shape)
-            print(one_channel_observations_tensor.shape)
+            # print(observations_tensor.shape)
+            # print(ext_returns_tensor.shape)
+            # print(int_returns_tensor.shape)
+            # print(actions_tensor.shape)
+            # print(advantages_tensor.shape)
+            # print(one_channel_observations_tensor.shape)
 
 
 
@@ -271,6 +275,7 @@ class Trainer():
             policy_loss_avg=[]
             value_loss_avg=[]
             entropy_avg=[]
+            predictor_loss_avg=[]
 
             for epoch in range(0,self.num_epoch):
                 # print("----------------next epoch----------------")
@@ -285,16 +290,18 @@ class Trainer():
                     experience_slice=(arr[index_slice] for arr in (observations_tensor,ext_returns_tensor,int_returns_tensor,actions_tensor,
                                                                    advantages_tensor,one_channel_observations_tensor))
                     self.obs_rms.update(one_channel_observations)
-                    loss, policy_loss, value_loss, entropy=self.train_model(*experience_slice,old_negative_log_p)
+                    loss, policy_loss, value_loss, predictor_loss, entropy=self.train_model(*experience_slice,old_negative_log_p)
                     loss=loss.detach().cpu().numpy()
                     policy_loss = policy_loss.detach().cpu().numpy()
                     value_loss = value_loss.detach().cpu().numpy()
+                    predictor_loss = predictor_loss.detach().cpu().numpy()
                     entropy = entropy.detach().cpu().numpy()
                     #self.old_model.set_weights(last_weights)
                     loss_avg.append(loss)
                     policy_loss_avg.append(policy_loss)
                     value_loss_avg.append(value_loss)
                     entropy_avg.append(entropy)
+                    predictor_loss_avg.append(predictor_loss)
             # print("----------------next training step--------------")
 
             end=time.time()
@@ -303,22 +310,29 @@ class Trainer():
             policy_loss_avg_result=np.array(policy_loss_avg).mean()
             value_loss_avg_result=np.array(value_loss_avg).mean()
             entropy_avg_result=np.array(entropy_avg).mean()
-            print("training step {:03d}, Epoch {:03d}: Loss: {:.3f}, policy loss: {:.3f}, value loss: {:.3f}, entopy: {:.3f} ".format(train_step,epoch,
+            predictor_loss_avg_result = np.array(predictor_loss_avg).mean()
+            print("training step {:03d}, Epoch {:03d}: Loss: {:.3f}, policy loss: {:.3f}, value loss: {:.3f},predictor loss: {:.3f}, entopy: {:.3f} ".format(train_step,epoch,
                                                                          loss_avg_result,
                                                                         policy_loss_avg_result,
                                                                          value_loss_avg_result,
+                                                                        predictor_loss_avg_result,
                                                                          entropy_avg_result))
-            # if flag.DEBUG:
-            #     print("policy", self.new_model.probs)
+
             if flag.TENSORBOARD_AVALAIBLE:
-                    #add instructions here
-                    print("not implemented")
+                        self.writer.add_scalar('loss_avg', loss_avg_result, train_step)
+                        self.writer.add_scalar('policy_loss_avg', policy_loss_avg_result, train_step)
+                        self.writer.add_scalar('value_loss_avg', value_loss_avg_result, train_step)
+                        self.writer.add_scalar('predictor_loss_avg', predictor_loss_avg_result, train_step)
+                        self.writer.add_scalar('entropy_avg', entropy_avg_result, train_step)
+                        self.writer.add_scalar('ext_rewards_avg', np.average(ext_rewards), train_step)
+                        self.writer.add_scalar('int_rewards_avg', np.average(int_rewards), train_step)
             else:
                 if train_step % self.log_interval == 0:
                     logger.record_tabular("train_step", train_step)
                     logger.record_tabular("loss", loss_avg_result)
                     logger.record_tabular("value loss",  value_loss_avg_result)
                     logger.record_tabular("policy loss", policy_loss_avg_result)
+                    logger.record_tabular("predictor loss", predictor_loss_avg_result)
                     logger.record_tabular("entropy", entropy_avg_result)
                     logger.record_tabular("rewards avg", np.average(ext_rewards))
                     logger.record_tabular("int reward avg",np.average(int_rewards))
@@ -326,7 +340,7 @@ class Trainer():
 
 
             if train_step % self.save_interval==0:
-                train_checkpoint_dir = 'logs/' + self.current_time + "/" + str(train_step)
+                train_checkpoint_dir = 'logs/' + self.current_time  + str(train_step)
 
                 torch.save({
                     'train_step': train_step,
@@ -416,7 +430,7 @@ class Trainer():
             loss.backward()
             torch.nn.utils.clip_grad_norm(self.new_model.parameters(), 0.5)
             self.optimizer.step()
-            return loss, policy_loss, value_loss, entropy
+            return loss, selected_policy_loss, value_loss, predictor_loss, entropy
 
 
     def get_intrinsic_rewards(self,input_observation):
@@ -425,7 +439,6 @@ class Trainer():
         predictor_value=self.predictor_model.forward_pass(input_observation)
         intrinsic_reward=(target_value - predictor_value).pow(2).sum(1) / 2
         intrinsic_reward= intrinsic_reward.detach().cpu().numpy()
-        print("SHAPE",intrinsic_reward.shape)
         return intrinsic_reward #check this
 
 

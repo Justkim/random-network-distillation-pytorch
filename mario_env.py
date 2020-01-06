@@ -73,9 +73,17 @@ class RewardScaler(gym.RewardWrapper):
     This is incredibly important and effects performance
     drastically.
     """
-    def reward(self, reward):
-        reward = reward / 15
-        return reward
+    def step(self, action):
+        obs,rew,done,info=self.env.step(action)
+        if done:
+            if info['life']==0:
+                rew=0
+            else:
+                rew=1
+        else:
+            rew=0
+        return obs,rew,done,info
+
 
 
 def make_env(env_idx):
@@ -202,14 +210,14 @@ def make_test():
 
 #
 #
-#
+
 # new_env=make_env(0)
 # new_env.reset()
 # while True:
-#     a,b,c,d=new_env.step(int(input()))
-#     print(d)
+#     a,b,c,d=new_env.step(int(2))
+#     print(b)
 #     new_env.render()
-#
+
 
 
 #
