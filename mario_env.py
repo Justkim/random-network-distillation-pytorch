@@ -11,6 +11,7 @@ import flag
 import collections
 from collections import deque
 import numpy as np
+from torch.multiprocessing import Pipe, Process
 
 from baselines.common.distributions import make_pdtype
 
@@ -27,6 +28,62 @@ import cv2
 # setUseOpenCL = False means that we will not use GPU (disable OpenCL acceleration)
 cv2.ocl.setUseOpenCL(False)
 import matplotlib.pyplot as plot
+
+class MarioEnv(Process):
+    def __init__(self,env_id,child,action_re,p):
+        super(MarioEnv, self).__init__()
+        self.child = child
+        self.env = self.make_env(0)
+        self.env.reset()
+        self.action_re=action_re
+        self.p=p
+        self.last_action=0
+        self.ep_num=0
+        self.env_id=env_id
+
+
+
+    def make_env(self,env_idx):
+        """
+        Create an environment with some standard wrappers.
+        """
+
+        # Make the environment
+
+        levelList = ['SuperMarioBros-1-1-v0', 'SuperMarioBros-2-1-v0', 'SuperMarioBros-3-1-v0', 'SuperMarioBros-4-1-v0',
+                     'SuperMarioBros-5-1-v0', 'SuperMarioBros-6-1-v0', 'SuperMarioBros-7-1-v0', 'SuperMarioBros-8-1-v0']
+        env = gym_super_mario_bros.make(levelList[env_idx])
+        env = BinarySpaceToDiscreteSpaceEnv(env, SIMPLE_MOVEMENT)
+        env = PreprocessFrame(env)
+        env = RewardScaler(env)
+        return env
+
+    def run(self):
+        while True:
+            action= self.child.recv()
+
+            reward=0
+            if flag.STICKY_ACTION:
+                if(np.random.rand()<self.p):
+                    action=self.last_action
+                self.last_action = action
+
+            for i in range(0,self.action_re):
+                obs,rew,done,info = self.env.step(action)
+                if flag.SHOW_GAME:
+                    self.env.render()
+                reward+=rew
+                if done:
+                    break
+            if done:
+                print("env: "+str(self.env_id) +" episode: "+str(self.ep_num) + " max_x: "+ str(info['x_pos']))
+                self.ep_num+=1
+                obs = self.env.reset()
+
+
+            self.child.send([obs,rew,done])
+
+
 
 
 class PreprocessFrame(gym.ObservationWrapper):
@@ -68,12 +125,9 @@ class PreprocessFrame(gym.ObservationWrapper):
 
 
 class RewardScaler(gym.RewardWrapper):
-    """
-    Bring rewards to a reasonable scale for PPO.
-    This is incredibly important and effects performance
-    drastically.
-    """
+
     def step(self, action):
+
         obs,rew,done,info=self.env.step(action)
         if done:
             if info['life']==0:
@@ -86,21 +140,6 @@ class RewardScaler(gym.RewardWrapper):
 
 
 
-def make_env(env_idx):
-    """
-    Create an environment with some standard wrappers.
-    """
-
-
-    # Make the environment
-
-
-    levelList = ['SuperMarioBros-1-1-v0','SuperMarioBros-2-1-v0','SuperMarioBros-3-1-v0','SuperMarioBros-4-1-v0','SuperMarioBros-5-1-v0','SuperMarioBros-6-1-v0','SuperMarioBros-7-1-v0','SuperMarioBros-8-1-v0']
-    env = gym_super_mario_bros.make(levelList[env_idx])
-    env = BinarySpaceToDiscreteSpaceEnv(env, SIMPLE_MOVEMENT)
-    env = PreprocessFrame(env)
-    env = RewardScaler(env)
-    return env
 
 
 def make_train_0():
