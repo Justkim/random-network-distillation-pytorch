@@ -1,8 +1,9 @@
 from train import Trainer
 import flag
 from play import Player
-import moving_dot_env
+import mario_env
 import argparse
+from torch.multiprocessing import Pipe
 
 flag.TRAIN = True
 flag.PLAY = False
@@ -10,11 +11,11 @@ flag.Load = False
 
 
 parser=argparse.ArgumentParser(description="train parser")
-parser.add_argument("--num_env", default=64, type=int, help="This is the number of workers")
-parser.add_argument("--game_steps", default=281, type=int, help="This is the number of steps in game "
+parser.add_argument("--num_env", default=2, type=int, help="This is the number of workers")
+parser.add_argument("--game_steps", default=3, type=int, help="This is the number of steps in game "
                                                                "for every training step")
 parser.add_argument("--num_epoch", default=4, type=int, help="This is the number of epoches")
-parser.add_argument("--mini_batch", default=4, type=int, help="This is mini batch size ")
+parser.add_argument("--mini_batch", default=2, type=int, help="This is mini batch size ")
 parser.add_argument("--lr", default=1e-4, type=float, help="This is optimizer learning rate")
 parser.add_argument("--gamma", default=0.999, type=float, help="This is discount factor")
 parser.add_argument("--int_gamma", default=0.99, type=float, help="This is the intrinsic discount factor")
@@ -31,7 +32,6 @@ parser.add_argument("--load", default=False,action="store_true", help="use this 
 parser.add_argument("--path", default="",type=str, help="path of model to load / either for train or test")
 parser.add_argument("--ext_adv_coef", default=0.5,type=float, help="extrinsic advantage coef")
 parser.add_argument("--int_adv_coef", default=0.5,type=float, help="intrinsic advantage coef")
-#parser.add_argument("--env_name",default="ll", type="str", help="choose between lunar lander and mario")
 parser.add_argument("--num_pre_norm_steps", default=50, type=int, help="This is the number of steps taken before game for initializing normilization")
 args=parser.parse_args()
 
@@ -41,19 +41,21 @@ if args.play:
 if args.load:
     flag.LOAD=True
 
+if flag.ENV=="mario":
+    num_action=7
+
 if flag.TRAIN:
     new_trainer = Trainer(num_training_steps=args.train_steps, num_env=args.num_env, num_game_steps=args.game_steps, num_epoch=args.num_epoch, learning_rate=args.lr
-                          , discount_factor=args.gamma, int_discount_factor=args.int_gamma, num_action=7, clip_range=args.clip_range, value_coef=args.value_coef,
+                          , discount_factor=args.gamma, int_discount_factor=args.int_gamma, num_action=num_action, clip_range=args.clip_range, value_coef=args.value_coef,
                           save_interval=args.save_int,
                           log_interval=args.log_int,
                           entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_num=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path, ext_adv_coef=args.ext_adv_coef,int_adv_coef=args.int_adv_coef,num_pre_norm_steps=args.num_pre_norm_steps)
     new_trainer.collect_experiance_and_train()
 elif flag.PLAY:
-    env = moving_dot_env.make_train_0()
-    new_player=Player(env=env,load_path=args.path)
+    parent, child= Pipe()
+    env= mario_env.MarioEnv(0,child,1,0)
+    new_player=Player(env=env,load_path=args.path,parent=parent)
     new_player.play()
 
-# else:
-#     new_player=Player(env=env)
-#     new_player.play(%cd PPO)
+
 
