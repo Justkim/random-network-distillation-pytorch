@@ -1,7 +1,7 @@
 from model import *
 import torch
 class Player:
-    def __init__(self,env,load_path):
+    def __init__(self,env,load_path,parent):
         self.env=env
         checkpoint = torch.load(load_path)
         torch.cuda.empty_cache()
@@ -12,13 +12,17 @@ class Player:
         self.model = Model(num_action=5).to(self.device)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.model.eval()
+        self.parent=parent
     def play(self):
 
         while True:
             observation_tensor = torch.from_numpy(np.expand_dims(self.current_observation,0)).float().to(self.device)
+
             predicted_action, value = self.model.step(observation_tensor)
             print("action choosen is",predicted_action)
-            self.current_observation,rew,info,done=self.env.step(predicted_action)
+            # self.current_observation,rew,info,done=self.env.step(predicted_action)
+            self.parent.send(predicted_action)
+            obs,rew,done= self.parent.recv()
             print("rewards is",rew)
             if flag.SHOW_GAME:
                 self.env.render()
