@@ -169,6 +169,7 @@ class Trainer():
                     one_channel_observations_tensor=torch.from_numpy(one_channel_observations).float().to(self.device)
                     int_rewards.append(self.get_intrinsic_rewards(one_channel_observations_tensor))
 
+
                 int_values.append(predicted_int_values)
                 ext_values.append(predicted_ext_values)
                 actions.extend(decided_actions)
@@ -212,15 +213,15 @@ class Trainer():
             # Step 2. calculate intrinsic reward
             # running mean intrinsic reward
 
-            int_reward = np.stack(int_rewards)
+            int_rewards = np.stack(int_rewards)
 
             total_reward_per_env = np.array([self.reward_filter.update(reward_per_step) for reward_per_step in
-                                             int_reward])
+                                             int_rewards])
             mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
             self.reward_rms.update_from_mean_std(mean, std ** 2, count)
 
             # normalize intrinsic reward
-            int_reward /= np.sqrt(self.reward_rms.var)
+            int_rewards /= np.sqrt(self.reward_rms.var)
             int_rewards_array = np.array(int_rewards)
             # print("one channel" , one_channel_observations.shape)
             # print("total observations", observations_array.shape)
@@ -350,6 +351,7 @@ class Trainer():
 
 
     def compute_advantage(self, rewards, values, dones, int_flag=0):
+
         if flag.DEBUG:
             print("---------computing advantage---------")
             print("rewards are",rewards)
