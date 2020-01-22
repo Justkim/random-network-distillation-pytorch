@@ -129,11 +129,8 @@ class RewardScaler(gym.RewardWrapper):
     def step(self, action):
 
         obs,rew,done,info=self.env.step(action)
-        if done:
-            if info['life']==0:
-                rew=0
-            else:
-                rew=1
+        if info['flag_get']==True:
+            rew=1
         else:
             rew=0
         return obs,rew,done,info
