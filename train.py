@@ -106,7 +106,9 @@ class Trainer():
         if flag.LOAD:
             checkpoint = torch.load(self.load_path)
 
-            self.new_model.load_state_dict(checkpoint['model_state_dict'])
+            self.new_model.load_state_dict(checkpoint['new_model_state_dict'])
+            self.predictor_model.load_state_dict(checkpoint['predictor_state_dict'])
+            self.target_model.load_state_dict(checkpoint['target_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             start_train_step = checkpoint['train_step']
             print("loaded model weights from checkpoint")
@@ -343,7 +345,9 @@ class Trainer():
 
                 torch.save({
                     'train_step': train_step,
-                    'model_state_dict': self.new_model.state_dict(),
+                    'new_model_state_dict': self.new_model.state_dict(),
+                    'predictor_state_dict': self.predictor_model.state_dict(),
+                    'target_state_dict':self.target_model.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
 
 
