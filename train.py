@@ -111,6 +111,13 @@ class Trainer():
             self.target_model.load_state_dict(checkpoint['target_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             start_train_step = checkpoint['train_step']
+            self.obs_rms.mean = checkpoint['obs_mean']
+            self.obs_rms.var = checkpoint['obs_var']
+            self.obs_rms.count = checkpoint['obs_count']
+            self.reward_rms.mean = checkpoint['rew_mean']
+            self.reward_rms.var = checkpoint['rew_var']
+            self.reward_rms.count = checkpoint['rew_count']
+            self.reward_filter.rewems=checkpoint['rewems']
             print("loaded model weights from checkpoint")
 
         current_observations = []
@@ -349,9 +356,18 @@ class Trainer():
                     'predictor_state_dict': self.predictor_model.state_dict(),
                     'target_state_dict':self.target_model.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
+                    'obs_mean': self.obs_rms.mean,
+                    'obs_var': self.obs_rms.var,
+                    'obs_count': self.obs_rms.count,
+                    'rew_mean': self.reward_rms.mean,
+                    'rew_var': self.reward_rms.var,
+                    'rew_count': self.reward_rms.count,
+                    'rewems': self.reward_filter.rewems
 
 
                 }, train_checkpoint_dir)
+
+              
 
 
     def compute_advantage(self, rewards, values, dones, int_flag=0):
