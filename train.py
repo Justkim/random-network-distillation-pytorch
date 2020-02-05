@@ -95,6 +95,7 @@ class Trainer():
         self.target_model = TargetModel(self.num_action).to(self.device)
         self.predictor_model = PredictorModel(self.num_action).to(self.device)
         self.mse_loss = nn.MSELoss()
+        self.predictor_mse_loss=nn.MSELoss(reduction='none')
 
         self.reward_rms = RunningStdMean()
         self.obs_rms = RunningStdMean(shape=(1, 1, 84, 84))
@@ -443,8 +444,10 @@ class Trainer():
             self.predictor_model.train()
             target_value = self.target_model.forward_pass(one_channel_observations_tensor)
             predictor_value = self.predictor_model.forward_pass(one_channel_observations_tensor)
-            predictor_loss = self.mse_loss(predictor_value, target_value)
-
+            predictor_loss = self.predictor_mse_loss(predictor_value, target_value).mean(-1)
+            mask = torch.rand(len(predictor_loss)).to(self.device)
+            mask = (mask < 0.25).type(torch.FloatTensor).to(self.device)
+            predictor_loss = (predictor_loss * mask).sum() / torch.max(mask.sum(), torch.Tensor([1]).to(self.device))
             new_policy, ext_new_values, int_new_values = self.new_model.forward_pass(observations_tensor)
             ext_value_loss = self.mse_loss(ext_new_values, ext_returns_tensor)
             int_value_loss = self.mse_loss(int_new_values, int_returns_tensor)
