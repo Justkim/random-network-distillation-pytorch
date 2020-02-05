@@ -132,10 +132,7 @@ class Trainer():
             envs.append(new_env)
             parents.append(parent)
             childs.append(child)
-
-        #normalize observations
-        observations_to_normalize=[]
-        for step in range(self.num_game_steps* self.num_pre_norm_steps):
+        if flag.LOAD:
 
             actions=np.random.randint(0,self.num_action,size=(self.num_env))
 
@@ -145,11 +142,26 @@ class Trainer():
             for i in range(0,len(parents)):
                 obs, rew , done = parents[i].recv()
                 current_observations.append(obs)
-            observations_to_normalize.extend(current_observations)
-            if(len(observations_to_normalize)%(self.num_game_steps*self.num_env)==0):
-                observations_to_normalize=np.stack(observations_to_normalize)[:,3,:,:].reshape(-1,1,84,84)
-                self.obs_rms.update(observations_to_normalize)
-                observations_to_normalize=[]
+        else:
+        #normalize observations
+
+            observations_to_normalize=[]
+            for step in range(self.num_game_steps* self.num_pre_norm_steps):
+
+                actions=np.random.randint(0,self.num_action,size=(self.num_env))
+
+                for i in range(0,len(parents)):
+                    parents[i].send(actions[i])
+                current_observations=[]
+                for i in range(0,len(parents)):
+                    obs, rew , done = parents[i].recv()
+                    current_observations.append(obs)
+                observations_to_normalize.extend(current_observations)
+                if(len(observations_to_normalize)%(self.num_game_steps*self.num_env)==0):
+                    observations_to_normalize=np.stack(observations_to_normalize)[:,3,:,:].reshape(-1,1,84,84)
+                    self.obs_rms.update(observations_to_normalize)
+                    observations_to_normalize=[]
+            print("normalization ended")
 
 
         for train_step in range(start_train_step,self.training_steps):
