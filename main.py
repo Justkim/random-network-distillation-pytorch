@@ -11,11 +11,11 @@ flag.Load = False
 
 
 parser=argparse.ArgumentParser(description="train parser")
-parser.add_argument("--num_env", default=2, type=int, help="This is the number of workers")
-parser.add_argument("--game_steps", default=3, type=int, help="This is the number of steps in game "
+parser.add_argument("--num_env", default=1, type=int, help="This is the number of workers")
+parser.add_argument("--game_steps", default=2, type=int, help="This is the number of steps in game "
                                                                "for every training step")
-parser.add_argument("--num_epoch", default=4, type=int, help="This is the number of epoches")
-parser.add_argument("--mini_batch", default=2, type=int, help="This is mini batch size ")
+parser.add_argument("--num_epoch", default=1, type=int, help="This is the number of epoches")
+parser.add_argument("--mini_batch", default=1, type=int, help="This is mini batch size ")
 parser.add_argument("--lr", default=1e-4, type=float, help="This is optimizer learning rate")
 parser.add_argument("--gamma", default=0.999, type=float, help="This is discount factor")
 parser.add_argument("--int_gamma", default=0.99, type=float, help="This is the intrinsic discount factor")
@@ -32,6 +32,7 @@ parser.add_argument("--load", default=False,action="store_true", help="use this 
 parser.add_argument("--path", default="",type=str, help="path of model to load / either for train or test")
 parser.add_argument("--ext_adv_coef", default=0.5,type=float, help="extrinsic advantage coef")
 parser.add_argument("--int_adv_coef", default=0.5,type=float, help="intrinsic advantage coef")
+parser.add_argument("--env_type",default="mario-complex",type=str)
 parser.add_argument("--num_pre_norm_steps", default=50, type=int, help="This is the number of steps taken before game for initializing normilization")
 args=parser.parse_args()
 
@@ -40,9 +41,16 @@ if args.play:
     flag.PLAY=True
 if args.load:
     flag.LOAD=True
-
-if flag.ENV=="mario":
+flag.ENV=args.env_type
+if flag.ENV=="mario-complex":
+    num_action=12
+elif flag.env=="mario-simple":
     num_action=7
+else:
+    print("env type error: env not recognized")
+    exit()
+
+
 
 if flag.TRAIN:
     new_trainer = Trainer(num_training_steps=args.train_steps, num_env=args.num_env, num_game_steps=args.game_steps, num_epoch=args.num_epoch, learning_rate=args.lr
@@ -52,9 +60,8 @@ if flag.TRAIN:
                           entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_num=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path, ext_adv_coef=args.ext_adv_coef,int_adv_coef=args.int_adv_coef,num_pre_norm_steps=args.num_pre_norm_steps)
     new_trainer.collect_experiance_and_train()
 elif flag.PLAY:
-    parent, child= Pipe()
-    env= mario_env.MarioEnv(0,child,1,0)
-    new_player=Player(env=env,load_path=args.path,parent=parent)
+   
+    new_player=Player(load_path=args.path)
     new_player.play()
 
 

@@ -5,14 +5,14 @@ import gym
 from nes_py.wrappers import BinarySpaceToDiscreteSpaceEnv
 import gym_super_mario_bros
 from gym_super_mario_bros.actions import RIGHT_ONLY
-from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
+from gym_super_mario_bros.actions import SIMPLE_MOVEMENT,COMPLEX_MOVEMENT
 from baselines.common.atari_wrappers import FrameStack
 import flag
 import collections
 from collections import deque
 import numpy as np
 from torch.multiprocessing import Pipe, Process
-
+import time
 from baselines.common.distributions import make_pdtype
 
 
@@ -50,10 +50,10 @@ class MarioEnv(Process):
 
         # Make the environment
 
-        levelList = ['SuperMarioBros-1-1-v0', 'SuperMarioBros-2-1-v0', 'SuperMarioBros-3-1-v0', 'SuperMarioBros-4-1-v0',
+        levelList = ['SuperMarioBros-v0', 'SuperMarioBros-2-1-v0', 'SuperMarioBros-3-1-v0', 'SuperMarioBros-4-1-v0',
                      'SuperMarioBros-5-1-v0', 'SuperMarioBros-6-1-v0', 'SuperMarioBros-7-1-v0', 'SuperMarioBros-8-1-v0']
         env = gym_super_mario_bros.make(levelList[env_idx])
-        env = BinarySpaceToDiscreteSpaceEnv(env, SIMPLE_MOVEMENT)
+        env = BinarySpaceToDiscreteSpaceEnv(env, COMPLEX_MOVEMENT)
         env = PreprocessFrame(env)
         env = RewardScaler(env)
         return env
@@ -62,17 +62,18 @@ class MarioEnv(Process):
         while True:
             action= self.child.recv()
 
-            reward=0
+
             if flag.STICKY_ACTION:
-                if(np.random.rand()<self.p):
+                if(np.random.rand()<=self.p):
                     action=self.last_action
                 self.last_action = action
 
             for i in range(0,self.action_re):
-                obs,rew,done,info = self.env.step(action)
+                obs,reward,done,info = self.env.step(action)
+
                 if flag.SHOW_GAME:
                     self.env.render()
-                reward+=rew
+
                 if done:
                     break
             if done:
@@ -81,7 +82,7 @@ class MarioEnv(Process):
                 obs = self.env.reset()
 
 
-            self.child.send([obs,rew,done])
+            self.child.send([obs,reward,done])
 
 
 
@@ -105,7 +106,7 @@ class PreprocessFrame(gym.ObservationWrapper):
         # Set frame to gray
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
-        # Resize the frame to 96x96x1
+
         frame = frame[35: , :,None]
 
 
