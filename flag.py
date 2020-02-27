@@ -8,5 +8,5 @@ ON_COLAB=False
 USE_STANDARD_ADV=False
 VALUE_CLIP=False
 PLAY=False
-ENV="mario"
+ENV="mario-complex"
 STICKY_ACTION=True
