@@ -29,11 +29,11 @@ class TargetModel(nn.Module):
             param.requires_grad = False
 
     def forward_pass(self,input_observations):
-        x=F.relu(self.conv1(input_observations))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
+        x=F.leaky_relu(self.conv1(input_observations))
+        x = F.leaky_relu(self.conv2(x))
+        x = F.leaky_relu(self.conv3(x))
         x=  x.view(x.size(0), -1)
-        target_value = F.relu(self.fc1(x))
+        target_value = (self.fc1(x))
         return target_value
 
 
@@ -69,10 +69,8 @@ class PredictorModel(nn.Module):
         x=  x.view(x.size(0), -1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        predictor_value = F.relu(self.fc3(x))
+        predictor_value = self.fc3(x)
         return predictor_value
-
-
 
 
 
