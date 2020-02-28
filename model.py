@@ -56,8 +56,8 @@ class Model(nn.Module):
         x = F.relu(self.fc2(x))
         actor_policy = F.relu(self.fc_actor(x))
         policy = self.policy(actor_policy)
-        predicted_int_value= self.int_value(F.relu(F.relu(self.extra(x))+x))[:,0]
-        predicted_ext_value = self.ext_value(F.relu(F.relu(self.extra(x)) + x)) [:,0]
+        predicted_int_value= self.int_value(F.relu(self.extra(x))+x)[:,0]
+        predicted_ext_value = self.ext_value(F.relu(self.extra(x)) + x) [:,0]
         return policy,predicted_ext_value,predicted_int_value
 
     def step(self,observations):
