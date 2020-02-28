@@ -128,7 +128,7 @@ class Trainer():
 
         for i in range(self.num_env):
             parent,child = Pipe()
-            new_env=mario_env.MarioEnv(i,child,self.num_action_repeat,0.25)
+            new_env = mario_env.MarioEnv(i,child,self.num_action_repeat,0.25)
             new_env.start()
             envs.append(new_env)
             parents.append(parent)
@@ -147,9 +147,9 @@ class Trainer():
         #normalize observations
 
             observations_to_normalize=[]
-            for step in range(self.num_game_steps* self.num_pre_norm_steps):
+            for step in range(self.num_game_steps * self.num_pre_norm_steps):
 
-                actions=np.random.randint(0,self.num_action,size=(self.num_env))
+                actions = np.random.randint(0,self.num_action,size=(self.num_env))
 
                 for i in range(0,len(parents)):
                     parents[i].send(actions[i])
@@ -164,23 +164,19 @@ class Trainer():
                     observations_to_normalize=[]
             print("normalization ended")
 
-
         for train_step in range(start_train_step,self.training_steps):
 
-            observations=[]
-            int_rewards=[]
-            ext_rewards=[]
-            dones=[]
-            int_values=[]
-            ext_values=[]
-            actions=[]
-
-            # start=time.time()
-            cross_entropy_loss = nn.CrossEntropyLoss()
+            total_observations=[]
+            total_int_rewards=[]
+            total_ext_rewards=[]
+            total_dones=[]
+            total_int_values=[]
+            total_ext_values=[]
+            total_actions=[]
 
             for game_step in range(self.num_game_steps):
 
-                observations.extend(current_observations)
+                total_observations.extend(current_observations)
 
                 with torch.no_grad():
                     current_observations_tensor = torch.from_numpy(np.array(current_observations)).float().to(self.device)
@@ -189,62 +185,55 @@ class Trainer():
                     one_channel_observations = (
                                 (one_channel_observations - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5, 5)
                     one_channel_observations_tensor=torch.from_numpy(one_channel_observations).float().to(self.device)
-                    int_rewards.append(self.get_intrinsic_rewards(one_channel_observations_tensor))
+                    total_int_rewards.append(self.get_intrinsic_rewards(one_channel_observations_tensor))
 
 
-                int_values.append(predicted_int_values)
-                ext_values.append(predicted_ext_values)
-                actions.extend(decided_actions)
+                total_int_values.append(predicted_int_values)
+                total_ext_values.append(predicted_ext_values)
+                total_actions.extend(decided_actions)
 
                 current_observations=[]
                 for i in range(0, len(parents)):
                     parents[i].send(decided_actions[i])
-                step_observations = []
+
                 step_rewards = []
                 step_dones = []
                 for i in range(0, len(parents)):
 
                     observation, reward, done =parents[i].recv()
                     current_observations.append(observation)
-                    step_observations.append(observation)
                     step_rewards.append(reward)
                     step_dones.append(done)
-                ext_rewards.append(step_rewards)
-                dones.append(step_dones)
+                total_ext_rewards.append(step_rewards)
+                total_dones.append(step_dones)
 
             # next state value, required for computing advantages
             with torch.no_grad():
                 current_observations_tensor = torch.from_numpy(np.array(current_observations)).float().to(self.device)
                 decided_actions, predicted_ext_values,predicted_int_values = self.new_model.step(current_observations_tensor)
 
-            int_values.append(predicted_int_values)
-            ext_values.append(predicted_ext_values)
-
+            total_int_values.append(predicted_int_values)
+            total_ext_values.append(predicted_ext_values)
 
             # convert lists to numpy arrays
-            observations_array=np.array(observations)
-            one_channel_observations=observations_array[:,3,:,:].reshape(-1,1,84,84)
-            one_channel_observations = ((one_channel_observations - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5,5)
-            ext_rewards_array = np.array(ext_rewards)
+            observations_array=np.array(total_observations)
+            total_one_channel_observations=observations_array[:,3,:,:].reshape(-1,1,84,84)
+            total_one_channel_observations = ((total_one_channel_observations - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5,5)
+            ext_rewards_array = np.array(total_ext_rewards)
 
-            dones_array = np.array(dones)
-            ext_values_array=np.array(ext_values)
-            int_values_array = np.array(int_values)
-            actions_array = np.array(actions)
-
-            # Step 2. calculate intrinsic reward
-            # running mean intrinsic reward
-
-            int_rewards = np.stack(int_rewards)
+            dones_array = np.array(total_dones)
+            ext_values_array=np.array(total_ext_values)
+            int_values_array = np.array(total_int_values)
+            actions_array = np.array(total_actions)
+            int_rewards_array = np.stack(total_int_rewards)
 
             total_reward_per_env = np.array([self.reward_filter.update(reward_per_step) for reward_per_step in
-                                             int_rewards])
+                                             int_rewards_array])
             mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
             self.reward_rms.update_from_mean_std(mean, std ** 2, count)
 
             # normalize intrinsic reward
-            int_rewards /= np.sqrt(self.reward_rms.var)
-            int_rewards_array = np.array(int_rewards)
+            int_rewards_array /= np.sqrt(self.reward_rms.var)
             # print("one channel" , one_channel_observations.shape)
             # print("total observations", observations_array.shape)
             # print("ext_rewards",ext_rewards_array.shape)
@@ -357,6 +346,7 @@ class Trainer():
                     logger.record_tabular("entropy", entropy_avg_result)
                     logger.record_tabular("rewards avg", np.average(ext_rewards))
                     logger.record_tabular("int reward avg",np.average(int_rewards))
+                    logger.record_tabular("epoch",self.num_epoch)
                     logger.dump_tabular()
 
 
