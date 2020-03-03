@@ -323,11 +323,11 @@ class Trainer:
             entropy_avg_result=np.array(entropy_avg).mean()
             predictor_loss_avg_result = np.array(predictor_loss_avg).mean()
             print("training step {:03d}, Epoch {:03d}: Loss: {:.3f}, policy loss: {:.3f}, value loss: {:.3f},predictor loss: {:.3f}, entopy: {:.3f} ".format(train_step,epoch,
-                                                                        #  loss_avg_result,
-                                                                        # policy_loss_avg_result,
-                                                                        #  value_loss_avg_result,
-                                                                        # predictor_loss_avg_result,
-                                                                        #  entropy_avg_result))
+                                                                         loss_avg_result,
+                                                                        policy_loss_avg_result,
+                                                                         value_loss_avg_result,
+                                                                        predictor_loss_avg_result,
+                                                                         entropy_avg_result))
 
             if flag.TENSORBOARD_AVALAIBLE:
                         self.writer.add_scalar('loss_avg', loss_avg_result, train_step)
