@@ -53,7 +53,14 @@ class MarioEnv(Process):
         levelList = ['SuperMarioBros-v0', 'SuperMarioBros-2-1-v0', 'SuperMarioBros-3-1-v0', 'SuperMarioBros-4-1-v0',
                      'SuperMarioBros-5-1-v0', 'SuperMarioBros-6-1-v0', 'SuperMarioBros-7-1-v0', 'SuperMarioBros-8-1-v0']
         env = gym_super_mario_bros.make(levelList[env_idx])
-        env = BinarySpaceToDiscreteSpaceEnv(env, COMPLEX_MOVEMENT)
+        if flag.ENV == "mario-complex":
+            env = BinarySpaceToDiscreteSpaceEnv(env, COMPLEX_MOVEMENT)
+        elif flag.env == "mario-simple":
+            env = BinarySpaceToDiscreteSpaceEnv(env, SIMPLE_MOVEMENT)
+        else:
+            print("env type error: env not recognized")
+            exit()
+
         env = PreprocessFrame(env)
         # env = RewardScaler(env)
         return env
