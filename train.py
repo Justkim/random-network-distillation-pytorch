@@ -191,7 +191,7 @@ class Trainer:
                 sample_reward_per_step += progress_rewards[0]
                 sample_reward_per_ep += progress_rewards[0]
                 sample_ext_reward += step_rewards[0]
-             
+
                 if step_dones[0]:
 
                     self.writer.add_scalar('ext_reward_per_episode_for_one_env',  sample_ext_reward, sample_episode_num)
@@ -322,7 +322,7 @@ class Trainer:
             value_loss_avg_result=np.array(value_loss_avg).mean()
             entropy_avg_result=np.array(entropy_avg).mean()
             predictor_loss_avg_result = np.array(predictor_loss_avg).mean()
-            #print("training step {:03d}, Epoch {:03d}: Loss: {:.3f}, policy loss: {:.3f}, value loss: {:.3f},predictor loss: {:.3f}, entopy: {:.3f} ".format(train_step,epoch,
+            print("training step {:03d}, Epoch {:03d}: Loss: {:.3f}, policy loss: {:.3f}, value loss: {:.3f},predictor loss: {:.3f}, entopy: {:.3f} ".format(train_step,epoch,
                                                                         #  loss_avg_result,
                                                                         # policy_loss_avg_result,
                                                                         #  value_loss_avg_result,
