@@ -7,39 +7,15 @@ import flag
 import datetime
 import mario_env
 from baselines import logger
-import time
-from torch.distributions.categorical import Categorical
 from rnd_model import TargetModel,PredictorModel
 from utils import RunningStdMean,RewardForwardFilter
 from torch.utils.tensorboard import SummaryWriter
 from torch.multiprocessing import Pipe, Process
 from torch.distributions.categorical import Categorical
 import torch.nn.functional as F
-#
-# @ray.remote
-# class Simulator(object):
-#     def __init__(self,num_action_repeat):
-#         self.env = mario_env.make_train_0()
-#         self.env.reset()
-#         self.num_action_repeat=num_action_repeat
-#
-#     def step(self, action):
-#         total_rewards=0
-#         for i in range(self.num_action_repeat):
-#             observations,rewards,dones,info=self.env.step(action)
-#             total_rewards+=rewards
-#             if dones:
-#                 observations = self.reset()
-#                 break
-#         if flag.SHOW_GAME:
-#             self.env.render()
-#         return observations, total_rewards, dones
-#
-#     def reset(self):
-#         return self.env.reset()
 
 
-class Trainer():
+class Trainer:
     def __init__(self,num_training_steps,num_env,num_game_steps,num_epoch,
                  learning_rate,discount_factor,int_discount_factor, num_action,
                  value_coef,clip_range,save_interval,log_interval,entropy_coef,lam,mini_batch_num,num_action_repeat,load_path,ext_adv_coef,int_adv_coef,num_pre_norm_steps):
@@ -58,7 +34,7 @@ class Trainer():
         self.num_pre_norm_steps=num_pre_norm_steps
         self.int_discount_factor=int_discount_factor
 
-        assert self.batch_size % self.mini_batch_num== 0
+        assert self.batch_size % self.mini_batch_num == 0
         self.mini_batch_size=int(self.batch_size / self.mini_batch_num)
         self.current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         log_dir = 'logs/' + self.current_time + '/log'
@@ -215,14 +191,14 @@ class Trainer():
                 sample_reward_per_step += progress_rewards[0]
                 sample_reward_per_ep += progress_rewards[0]
                 sample_ext_reward += step_rewards[0]
-               # self.writer.add_scalar('progress_reward_per_train_step_for_one_env', sample_reward, sample_episode_num)
+             
                 if step_dones[0]:
 
                     self.writer.add_scalar('ext_reward_per_episode_for_one_env',  sample_ext_reward, sample_episode_num)
                     self.writer.add_scalar('progress_reward_per_episode_for_one_env', sample_reward_per_ep, sample_episode_num)
                     sample_ext_reward = 0
                     sample_reward_per_ep = 0
-                    sample_episode_num+=1
+                    sample_episode_num += 1
 
                 total_ext_rewards.append(step_rewards)
                 total_dones.append(step_dones)
@@ -265,7 +241,7 @@ class Trainer():
             # print("int_values", int_values_array.shape)
             # print("dones",dones_array.shape)
             # print("actions",actions_array.shape)
-            env_int_rewards_sample = int_rewards_array.T
+
             ext_advantages_array,ext_returns_array=self.compute_advantage(ext_rewards_array,ext_values_array,dones_array,0)
             int_advantages_array, int_returns_array = self.compute_advantage(int_rewards_array, int_values_array,
                                                                              dones_array,1)
@@ -346,12 +322,12 @@ class Trainer():
             value_loss_avg_result=np.array(value_loss_avg).mean()
             entropy_avg_result=np.array(entropy_avg).mean()
             predictor_loss_avg_result = np.array(predictor_loss_avg).mean()
-            print("training step {:03d}, Epoch {:03d}: Loss: {:.3f}, policy loss: {:.3f}, value loss: {:.3f},predictor loss: {:.3f}, entopy: {:.3f} ".format(train_step,epoch,
-                                                                         loss_avg_result,
-                                                                        policy_loss_avg_result,
-                                                                         value_loss_avg_result,
-                                                                        predictor_loss_avg_result,
-                                                                         entropy_avg_result))
+            #print("training step {:03d}, Epoch {:03d}: Loss: {:.3f}, policy loss: {:.3f}, value loss: {:.3f},predictor loss: {:.3f}, entopy: {:.3f} ".format(train_step,epoch,
+                                                                        #  loss_avg_result,
+                                                                        # policy_loss_avg_result,
+                                                                        #  value_loss_avg_result,
+                                                                        # predictor_loss_avg_result,
+                                                                        #  entropy_avg_result))
 
             if flag.TENSORBOARD_AVALAIBLE:
                         self.writer.add_scalar('loss_avg', loss_avg_result, train_step)
@@ -359,8 +335,7 @@ class Trainer():
                         self.writer.add_scalar('value_loss_avg', value_loss_avg_result, train_step)
                         self.writer.add_scalar('predictor_loss_avg', predictor_loss_avg_result, train_step)
                         self.writer.add_scalar('entropy_avg', entropy_avg_result, train_step)
-                        self.writer.add_scalar('ext_rewards_avg', np.average(total_ext_rewards), train_step)
-                        self.writer.add_scalar('int_rewards_avg', np.average(total_int_rewards), train_step)
+
             else:
                 if train_step % self.log_interval == 0:
                     logger.record_tabular("train_step", train_step)
