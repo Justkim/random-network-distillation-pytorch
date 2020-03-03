@@ -40,6 +40,7 @@ class MarioEnv(Process):
         self.last_action=0
         self.ep_num=0
         self.env_id=env_id
+        self.progress_reward=0
 
 
 
@@ -55,7 +56,7 @@ class MarioEnv(Process):
         env = gym_super_mario_bros.make(levelList[env_idx])
         if flag.ENV == "mario-complex":
             env = BinarySpaceToDiscreteSpaceEnv(env, COMPLEX_MOVEMENT)
-        elif flag.env == "mario-simple":
+        elif flag.ENV == "mario-simple":
             env = BinarySpaceToDiscreteSpaceEnv(env, SIMPLE_MOVEMENT)
         else:
             print("env type error: env not recognized")
@@ -74,24 +75,29 @@ class MarioEnv(Process):
                 if(np.random.rand()<=self.p):
                     action=self.last_action
                 self.last_action = action
-
+            global progress_reward
             for i in range(0,self.action_re):
                 obs,progress_reward,done,info = self.env.step(action)
-
-                if flag.SHOW_GAME:
-                    self.env.render()
+                if info['life']<2:
+                    done=True
                 if done:
+                    print("env: " + str(self.env_id) + " episode: " + str(self.ep_num) +" progress; "+str(self.progress_reward)+ " max_x: " + str(
+                        info['x_pos']))
+                    self.ep_num += 1
+                    self.progress_reward=0
+                    obs = self.env.reset()
                     break
+
             progress_reward=progress_reward/15
+            self.progress_reward+=progress_reward
+
             if info['flag_get'] == True:
                 reward = 1
             else:
                 reward = 0
-            if done:
-                print("env: "+str(self.env_id) +" episode: "+str(self.ep_num) + " max_x: "+ str(info['x_pos']))
-                self.ep_num+=1
-                obs = self.env.reset()
 
+            if flag.SHOW_GAME:
+                self.env.render()
 
             self.child.send([obs,progress_reward, reward,done])
 
@@ -118,7 +124,7 @@ class PreprocessFrame(gym.ObservationWrapper):
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
 
-        frame = frame[35: , :,None]
+        # frame = frame[35: , :,None]
 
 
         frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
@@ -136,123 +142,6 @@ class PreprocessFrame(gym.ObservationWrapper):
         return np.stack(self.frame_deque)
 
 
-# class RewardScaler(gym.RewardWrapper):
-#
-#     def step(self, action):
-#
-#         obs,rew,done,info=self.env.step(action)
-#         if info['flag_get']==True:
-#             rew=1
-#         else:
-#             rew=0
-#         return obs,rew,done,info
-#
-#
-#
-
-
-def make_train_0():
-    new_env=make_env(0)
-    # new_env = gym.wrappers.Monitor(new_env, "recording0")
-    return new_env
-
-
-def make_train_1():
-    new_env = make_env(1)
-    #new_env = gym.wrappers.Monitor(new_env, "recording1")
-    return new_env
-
-
-def make_train_2():
-    new_env = make_env(2)
-    #new_env = gym.wrappers.Monitor(new_env, "recording2")
-    return new_env
-
-
-def make_train_3():
-    new_env = make_env(3)
-    #new_env = gym.wrappers.Monitor(new_env, "recording3")
-    return new_env
-
-
-def make_train_4():
-    new_env = make_env(4)
-    #new_env = gym.wrappers.Monitor(new_env, "recording4")
-    return new_env
-
-
-def make_train_5():
-    new_env = make_env(5)
-    #new_env = gym.wrappers.Monitor(new_env, "recording5")
-    return new_env
-
-
-def make_train_6():
-    new_env = make_env(6)
-    #new_env = gym.wrappers.Monitor(new_env, "recording6")
-    return new_env
-
-
-def make_train_7():
-    new_env = make_env(7)
-    #new_env = gym.wrappers.Monitor(new_env, "recording7")
-    return new_env
-
-
-def make_train_8():
-    new_env = make_env(8)
-    # new_env = gym.wrappers.Monitor(new_env, "recording8")
-    return new_env
-
-
-def make_train_9():
-    return make_env(9)
-
-
-def make_train_10():
-    return make_env(10)
-
-
-def make_train_11():
-    return make_env(11)
-
-
-def make_train_12():
-    return make_env(12)
-
-
-def make_test_level_Green():
-    return make_test()
-
-
-def make_test():
-    """
-    Create an environment with some standard wrappers.
-    """
-
-    # Make the environment
-    env = gym_super_mario_bros.make('SuperMarioBros-v0')
-    env = BinarySpaceToDiscreteSpaceEnv(env, RIGHT_ONLY)
-    print(env.action_space)
-    # Build the actions array
-    # env = ActionsDiscretizer(env)
-
-    # Scale the rewards
-    # env = RewardScaler(env)
-
-    # PreprocessFrame
-    env = PreprocessFrame(env)
-
-    # Stack 4 frames
-    env = FrameStack(env, 6)
-
-
-    # Allow back tracking that helps agents are not discouraged too heavily
-    # from exploring backwards if there is no way to advance
-    # head-on in the level.
-    # env = AllowBacktracking(env)
-
-    return env
 
 
 
