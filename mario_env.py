@@ -55,7 +55,7 @@ class MarioEnv(Process):
         env = gym_super_mario_bros.make(levelList[env_idx])
         env = BinarySpaceToDiscreteSpaceEnv(env, COMPLEX_MOVEMENT)
         env = PreprocessFrame(env)
-        env = RewardScaler(env)
+        # env = RewardScaler(env)
         return env
 
     def run(self):
@@ -69,20 +69,24 @@ class MarioEnv(Process):
                 self.last_action = action
 
             for i in range(0,self.action_re):
-                obs,reward,done,info = self.env.step(action)
+                obs,progress_reward,done,info = self.env.step(action)
 
                 if flag.SHOW_GAME:
                     self.env.render()
-
                 if done:
                     break
+            progress_reward=progress_reward/15
+            if info['flag_get'] == True:
+                reward = 1
+            else:
+                reward = 0
             if done:
                 print("env: "+str(self.env_id) +" episode: "+str(self.ep_num) + " max_x: "+ str(info['x_pos']))
                 self.ep_num+=1
                 obs = self.env.reset()
 
 
-            self.child.send([obs,reward,done])
+            self.child.send([obs,progress_reward, reward,done])
 
 
 
@@ -125,19 +129,19 @@ class PreprocessFrame(gym.ObservationWrapper):
         return np.stack(self.frame_deque)
 
 
-class RewardScaler(gym.RewardWrapper):
-
-    def step(self, action):
-
-        obs,rew,done,info=self.env.step(action)
-        if info['flag_get']==True:
-            rew=1
-        else:
-            rew=0
-        return obs,rew,done,info
-
-
-
+# class RewardScaler(gym.RewardWrapper):
+#
+#     def step(self, action):
+#
+#         obs,rew,done,info=self.env.step(action)
+#         if info['flag_get']==True:
+#             rew=1
+#         else:
+#             rew=0
+#         return obs,rew,done,info
+#
+#
+#
 
 
 def make_train_0():
