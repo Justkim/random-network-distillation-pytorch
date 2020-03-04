@@ -117,7 +117,7 @@ class Trainer:
                 parents[i].send(actions[i])
             current_observations=[]
             for i in range(0,len(parents)):
-                obs, rew , done = parents[i].recv()
+                obs,_, rew , done = parents[i].recv()
                 current_observations.append(obs)
         else:
         #normalize observations
