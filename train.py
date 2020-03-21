@@ -79,6 +79,7 @@ class Trainer:
 
     def collect_experiance_and_train(self):
         start_train_step = 0
+        sample_episode_num = 0
 
         if flag.LOAD:
             checkpoint = torch.load(self.load_path)
@@ -88,6 +89,7 @@ class Trainer:
             self.target_model.load_state_dict(checkpoint['target_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             start_train_step = checkpoint['train_step']
+            sample_episode_num = checkpoint['ep_num']
             self.obs_rms.mean = checkpoint['obs_mean']
             self.obs_rms.var = checkpoint['obs_var']
             self.obs_rms.count = checkpoint['obs_count']
@@ -141,7 +143,7 @@ class Trainer:
             print("normalization ended")
 
 
-        sample_episode_num=0
+
         sample_ext_reward=0
         sample_reward_per_step=0
         sample_reward_per_ep=0
@@ -365,7 +367,8 @@ class Trainer:
                     'rew_mean': self.reward_rms.mean,
                     'rew_var': self.reward_rms.var,
                     'rew_count': self.reward_rms.count,
-                    'rewems': self.reward_filter.rewems
+                    'rewems': self.reward_filter.rewems,
+                     'ep_num': sample_episode_num
 
 
                 }, train_checkpoint_dir)
