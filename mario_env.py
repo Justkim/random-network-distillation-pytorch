@@ -6,14 +6,13 @@ from nes_py.wrappers import BinarySpaceToDiscreteSpaceEnv
 import gym_super_mario_bros
 from gym_super_mario_bros.actions import RIGHT_ONLY
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT,COMPLEX_MOVEMENT
-from baselines.common.atari_wrappers import FrameStack
 import flag
 import collections
 from collections import deque
 import numpy as np
 from torch.multiprocessing import Pipe, Process
 import time
-from baselines.common.distributions import make_pdtype
+
 
 
 # import gym_remote.client as grc
