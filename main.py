@@ -44,7 +44,7 @@ if args.load:
 flag.ENV=args.env_type
 if flag.ENV=="mario-complex":
     num_action=12
-elif flag.env=="mario-simple":
+elif flag.ENV=="mario-simple":
     num_action=7
 else:
     print("env type error: env not recognized")
