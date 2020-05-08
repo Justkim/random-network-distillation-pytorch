@@ -5,6 +5,7 @@ import cv2
 from torch.multiprocessing import Process
 import flag
 cv2.ocl.setUseOpenCL(False)
+import time
 
 
 class MontezumaRevenge(Process):
@@ -38,13 +39,14 @@ class MontezumaRevenge(Process):
                 if info['ale.lives'] < 6:
                     done = True
                 if done:
-                    print("env: " + str(self.env_id) + " episode: "+ str(self.ep_num))
+                    #print("env: " + str(self.env_id) + " episode: "+ str(self.ep_num))
                     self.ep_num += 1
                     obs = self.env.reset()
                     break
 
             if flag.SHOW_GAME:
                 self.env.render()
+                time.sleep(0.5)
 
             self.child.send([obs, reward, done])
 
