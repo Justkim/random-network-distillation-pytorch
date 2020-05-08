@@ -5,7 +5,7 @@ import torch.optim as optim
 import numpy as np
 import flag
 import datetime
-import mario_env
+import montezuma_revenge_env
 from baselines import logger
 from rnd_model import TargetModel,PredictorModel
 from utils import RunningStdMean,RewardForwardFilter
@@ -106,7 +106,7 @@ class Trainer:
 
         for i in range(self.num_env):
             parent,child = Pipe()
-            new_env = mario_env.MarioEnv(i,child,self.num_action_repeat,0.25)
+            new_env = montezuma_revenge_env.MontezumaRevenge(i,child,self.num_action_repeat,0.25)
             new_env.start()
             envs.append(new_env)
             parents.append(parent)
@@ -133,7 +133,7 @@ class Trainer:
                     parents[i].send(actions[i])
                 current_observations=[]
                 for i in range(0,len(parents)):
-                    obs, _,rew , done = parents[i].recv()
+                    obs,rew , done = parents[i].recv()
                     current_observations.append(obs)
                 observations_to_normalize.extend(current_observations)
                 if(len(observations_to_normalize)%(self.num_game_steps*self.num_env)==0):
@@ -142,11 +142,7 @@ class Trainer:
                     observations_to_normalize=[]
             print("normalization ended")
 
-
-
         sample_ext_reward=0
-        sample_reward_per_step=0
-        sample_reward_per_ep=0
 
         for train_step in range(start_train_step,self.training_steps):
 
@@ -157,7 +153,7 @@ class Trainer:
             total_int_values=[]
             total_ext_values=[]
             total_actions=[]
-            progress_rewards=[]
+
 
             for game_step in range(self.num_game_steps):
 
@@ -185,27 +181,20 @@ class Trainer:
                 step_dones = []
                 for i in range(0, len(parents)):
 
-                    observation, progress_reward, reward, done =parents[i].recv()
+                    observation, reward, done =parents[i].recv()
                     current_observations.append(observation)
                     step_rewards.append(reward)
                     step_dones.append(done)
-                    progress_rewards.append(progress_reward)
-                sample_reward_per_step += progress_rewards[0]
-                sample_reward_per_ep += progress_rewards[0]
                 sample_ext_reward += step_rewards[0]
 
                 if step_dones[0]:
 
                     self.writer.add_scalar('ext_reward_per_episode_for_one_env',  sample_ext_reward, sample_episode_num)
-                    self.writer.add_scalar('progress_reward_per_episode_for_one_env', sample_reward_per_ep, sample_episode_num)
                     sample_ext_reward = 0
-                    sample_reward_per_ep = 0
                     sample_episode_num += 1
 
                 total_ext_rewards.append(step_rewards)
                 total_dones.append(step_dones)
-            self.writer.add_scalar('progress_reward_per_train_step_for_one_env', sample_reward_per_step, train_step)
-            sample_reward_per_step=0
             # next state value, required for computing advantages
             with torch.no_grad():
                 current_observations_tensor = torch.from_numpy(np.array(current_observations)).float().to(self.device)

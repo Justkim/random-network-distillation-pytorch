@@ -1,7 +1,7 @@
 from train import Trainer
 import flag
 from play import Player
-import mario_env
+import montezuma_revenge_env
 import argparse
 from torch.multiprocessing import Pipe
 
@@ -32,7 +32,7 @@ parser.add_argument("--load", default=False,action="store_true", help="use this 
 parser.add_argument("--path", default="",type=str, help="path of model to load / either for train or test")
 parser.add_argument("--ext_adv_coef", default=0.5,type=float, help="extrinsic advantage coef")
 parser.add_argument("--int_adv_coef", default=0.5,type=float, help="intrinsic advantage coef")
-parser.add_argument("--env_type",default="mario-complex",type=str)
+#parser.add_argument("--env_type",default="mario-complex",type=str)
 parser.add_argument("--num_pre_norm_steps", default=50, type=int, help="This is the number of steps taken before game for initializing normilization")
 args=parser.parse_args()
 
@@ -41,15 +41,8 @@ if args.play:
     flag.PLAY=True
 if args.load:
     flag.LOAD=True
-flag.ENV=args.env_type
-if flag.ENV=="mario-complex":
-    num_action=12
-elif flag.ENV=="mario-simple":
-    num_action=7
-else:
-    print("env type error: env not recognized")
-    exit()
 
+num_action=18 #number of actions for montezuma revenge
 
 
 if flag.TRAIN:

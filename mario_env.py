@@ -1,32 +1,15 @@
-# Part taken from adborghi fantastic implementation
-# https://github.com/aborghi/retro_contest_agent/blob/master/fastlearner/ppo2ttifrutti_sonic_env.py
-import numpy as np
 import gym
 from nes_py.wrappers import BinarySpaceToDiscreteSpaceEnv
 import gym_super_mario_bros
 from gym_super_mario_bros.actions import RIGHT_ONLY
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT,COMPLEX_MOVEMENT
 import flag
-import collections
 from collections import deque
 import numpy as np
 from torch.multiprocessing import Pipe, Process
-import time
-
-
-
-# import gym_remote.client as grc
-
-
-# This will be useful for stacking frames
-# from baselines.common.atari_wrappers import FrameStack
-
-# Library used to modify frames (former times we used matplotlib)
 import cv2
-
-# setUseOpenCL = False means that we will not use GPU (disable OpenCL acceleration)
 cv2.ocl.setUseOpenCL(False)
-import matplotlib.pyplot as plot
+
 
 class MarioEnv(Process):
     def __init__(self,env_id,child,action_re,p):
@@ -139,56 +122,5 @@ class PreprocessFrame(gym.ObservationWrapper):
     def stack_frames(self,new_frame):
         self.frame_deque.append(new_frame)
         return np.stack(self.frame_deque)
-
-
-
-
-
-#
-#
-
-# new_env=make_env(0)
-# new_env.reset()
-# while True:
-#     a,b,c,d=new_env.step(int(2))
-#     print(b)
-#     new_env.render()
-
-
-
-#
-# while True:
-#    frame=[]
-#    a,b,c,d=new_env.step(6)
-#    print("reward is",b)
-#    # new_env.step(3)
-#    # new_env.step(1)
-#    # new_env.step(5)
-#    # a,b,c,d=new_env.step(6)
-#    # print(b)
-#    new_env.render()
-# #
-#    time.sleep(0.05)
-# action_space=new_env.action_space
-#
-# pdtype = make_pdtype(action_space)
-#
-#
-# while True:
-#    a0= pdtype.sample()
-#
-#    a,b,c,d=new_env.step(a0)
-#    print("action",a0)
-#    # new_env.step(3)
-#    # new_env.step(1)
-#    # new_env.step(5)
-#    # a,b,c,d=new_env.step(6)
-#    # print(b)
-#    new_env.render()
-#
-#    time.sleep(0.05)
-
-
-
 
 
