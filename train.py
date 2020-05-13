@@ -106,7 +106,7 @@ class Trainer:
 
         for i in range(self.num_env):
             parent,child = Pipe()
-            new_env = montezuma_revenge_env.MontezumaRevenge(i,child,self.num_action_repeat,0.25)
+            new_env = montezuma_revenge_env.MontezumaRevenge(i,child,self.num_action_repeat,0.25,4000)
             new_env.start()
             envs.append(new_env)
             parents.append(parent)
