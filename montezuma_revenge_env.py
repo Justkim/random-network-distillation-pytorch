@@ -9,7 +9,7 @@ import time
 
 
 class MontezumaRevenge(Process):
-    def __init__(self,env_id,child,action_re,p):
+    def __init__(self,env_id,child,action_re,p,max_steps):
         super(MontezumaRevenge, self).__init__()
         self.env = self.make_env()
         self.env.reset()
@@ -20,6 +20,8 @@ class MontezumaRevenge(Process):
         self.last_action = 0
         self.ep_num = 0
         self.env_id = env_id
+        self.steps=0
+        self.max_steps=max_steps
 
     def make_env(self):
         env = gym.make("MontezumaRevengeNoFrameskip-v4")
@@ -29,15 +31,18 @@ class MontezumaRevenge(Process):
     def run(self):
         while True:
             action = self.child.recv()
-            obs, reward, done, info = self.env.step(action)
+            reward=0
             if flag.STICKY_ACTION:
                 if (np.random.rand() <= self.p):
                     action = self.last_action
                 self.last_action = action
             for i in range(0, self.action_re):
                 obs,rew, done, info = self.env.step(action)
+                reward+=rew
                 if info['ale.lives'] < 6:
                     done = True
+                if self.steps>self.max_steps:
+                    done=True
                 if done:
                     #print("env: " + str(self.env_id) + " episode: "+ str(self.ep_num))
                     self.ep_num += 1
@@ -47,7 +52,7 @@ class MontezumaRevenge(Process):
             if flag.SHOW_GAME:
                 self.env.render()
                 time.sleep(0.5)
-
+            self.steps+=1
             self.child.send([obs, reward, done])
 
 
