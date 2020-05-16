@@ -47,7 +47,7 @@ class Model(nn.Module):
         init.orthogonal_(self.extra.weight, 0.1)
         self.extra.bias.data.zero_()
 
-    def forward_pass(self,input_observations):
+    def forward(self,input_observations):
         x=F.relu(self.conv1(input_observations))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
@@ -61,7 +61,7 @@ class Model(nn.Module):
         return policy,predicted_ext_value,predicted_int_value
 
     def step(self,observations):
-        policy_tensor, predicted_ext_value_tensor, predicted_int_value_tensor=self.forward_pass(observations)
+        policy_tensor, predicted_ext_value_tensor, predicted_int_value_tensor=self.forward(observations)
         softmax_policy_tensor = F.softmax(input=policy_tensor)
         softmax_policy = softmax_policy_tensor.detach().cpu().numpy()
         predicted_ext_value=predicted_ext_value_tensor.detach().cpu().numpy()

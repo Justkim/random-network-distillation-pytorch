@@ -28,7 +28,7 @@ class TargetModel(nn.Module):
         for param in self.parameters():
             param.requires_grad = False
 
-    def forward_pass(self,input_observations):
+    def forward(self,input_observations):
         x=F.leaky_relu(self.conv1(input_observations))
         x = F.leaky_relu(self.conv2(x))
         x = F.leaky_relu(self.conv3(x))
@@ -62,7 +62,7 @@ class PredictorModel(nn.Module):
                 init.orthogonal_(p.weight, np.sqrt(2))
                 p.bias.data.zero_()
 
-    def forward_pass(self,input_observations):
+    def forward(self,input_observations):
         x=F.leaky_relu(self.conv1(input_observations))
         x = F.leaky_relu(self.conv2(x))
         x = F.leaky_relu(self.conv3(x))
