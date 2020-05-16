@@ -8,7 +8,7 @@ import datetime
 import montezuma_revenge_env
 from baselines import logger
 from rnd_model import TargetModel,PredictorModel
-from utils import RunningStdMean,RewardForwardFilter
+from utils import RunningStdMean,RewardForwardFilter,global_grad_norm_
 from torch.utils.tensorboard import SummaryWriter
 from torch.multiprocessing import Pipe, Process
 from torch.distributions.categorical import Categorical
@@ -460,7 +460,7 @@ class Trainer:
 
             loss.backward()
             # torch.nn.utils.clip_grad_norm_(self.new_model.parameters(), 0.5)
-            torch.nn.utils.clip_grad_norm_(self.predictor_model.parameters(), 0.5)
+            global_grad_norm_(list(self.new_model.parameters()) + list(self.target_model.parameters()))
             self.optimizer.step()
             return loss, selected_policy_loss, value_loss, predictor_loss, entropy
 
