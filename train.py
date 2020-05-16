@@ -143,6 +143,7 @@ class Trainer:
             print("normalization ended")
 
         sample_ext_reward=0
+        sample_int_reward=0
 
         for train_step in range(start_train_step,self.training_steps):
 
@@ -166,7 +167,8 @@ class Trainer:
                     one_channel_observations = (
                                 (one_channel_observations - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5, 5)
                     one_channel_observations_tensor=torch.from_numpy(one_channel_observations).float().to(self.device)
-                    total_int_rewards.append(self.get_intrinsic_rewards(one_channel_observations_tensor))
+                    int_reward=self.get_intrinsic_rewards(one_channel_observations_tensor)
+                    total_int_rewards.append(int_reward)
 
 
                 total_int_values.append(predicted_int_values)
@@ -186,11 +188,15 @@ class Trainer:
                     step_rewards.append(reward)
                     step_dones.append(done)
                 sample_ext_reward += step_rewards[0]
+                sample_int_reward+=int_reward[0]
+
 
                 if step_dones[0]:
 
                     self.writer.add_scalar('ext_reward_per_episode_for_one_env',  sample_ext_reward, sample_episode_num)
+                    self.writer.add_scalar('int_reward_per_episode_for_one_env', sample_int_reward, sample_episode_num)
                     sample_ext_reward = 0
+                    sample_int_reward = 0
                     sample_episode_num += 1
 
                 total_ext_rewards.append(step_rewards)
@@ -222,8 +228,8 @@ class Trainer:
 
             # normalize intrinsic reward
             int_rewards_array /= np.sqrt(self.reward_rms.var)
-            self.writer.add_scalar('avg_int_reward_per_train_step_for_every_env', np.sum(int_rewards_array) / self.num_env, train_step)
-            self.writer.add_scalar('int_reward_for_one_env_per_step',int_rewards_array.T[0].mean(),train_step)
+            self.writer.add_scalar('avg_int_reward_per_train_step_for_all_envs', np.sum(int_rewards_array) / self.num_env, train_step)
+            self.writer.add_scalar('int_reward_for_one_env_per_train_step',int_rewards_array.T[0].mean(),train_step)
             # print("one channel" , one_channel_observations.shape)
             # print("total observations", observations_array.shape)
             # print("ext_rewards",ext_rewards_array.shape)
