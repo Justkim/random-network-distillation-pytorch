@@ -274,7 +274,7 @@ class Trainer:
 
 
             with torch.no_grad():
-                old_policy, _,_ = self.new_model.forward(observations_tensor)
+                old_policy, _,_ = self.new_model(observations_tensor)
                 dist_old=Categorical(F.softmax(old_policy,dim=1))
                 old_log_prob = dist_old.log_prob(actions_tensor)
 
@@ -430,13 +430,13 @@ class Trainer:
 
             self.new_model.train()
             self.predictor_model.train()
-            target_value = self.target_model.forward(one_channel_observations_tensor)
-            predictor_value = self.predictor_model.forward(one_channel_observations_tensor)
+            target_value = self.target_model(one_channel_observations_tensor)
+            predictor_value = self.predictor_model(one_channel_observations_tensor)
             predictor_loss = self.predictor_mse_loss(predictor_value, target_value).mean(-1)
             mask = torch.rand(len(predictor_loss)).to(self.device)
             mask = (mask < 0.25).type(torch.FloatTensor).to(self.device)
             predictor_loss = (predictor_loss * mask).sum() / torch.max(mask.sum(), torch.Tensor([1]).to(self.device))
-            new_policy, ext_new_values, int_new_values = self.new_model.forward(observations_tensor)
+            new_policy, ext_new_values, int_new_values = self.new_model(observations_tensor)
             ext_value_loss = self.mse_loss(ext_new_values, ext_returns_tensor)
             int_value_loss = self.mse_loss(int_new_values, int_returns_tensor)
             value_loss = ext_value_loss + int_value_loss
@@ -461,8 +461,8 @@ class Trainer:
 
     def get_intrinsic_rewards(self,input_observation):
 
-        target_value = self.target_model.forward(input_observation) #shape: [n,512]
-        predictor_value = self.predictor_model.forward(input_observation) #shape [n,512]
+        target_value = self.target_model(input_observation) #shape: [n,512]
+        predictor_value = self.predictor_model(input_observation) #shape [n,512]
         intrinsic_reward=(target_value - predictor_value).pow(2).sum(1) / 2
         intrinsic_reward= intrinsic_reward.detach().cpu().numpy()
         return intrinsic_reward

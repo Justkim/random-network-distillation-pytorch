@@ -61,7 +61,7 @@ class Model(nn.Module):
         return policy,predicted_ext_value,predicted_int_value
 
     def step(self,observations):
-        policy_tensor, predicted_ext_value_tensor, predicted_int_value_tensor=self.forward(observations)
+        policy_tensor, predicted_ext_value_tensor, predicted_int_value_tensor=self(observations)
         softmax_policy_tensor = F.softmax(input=policy_tensor)
         softmax_policy = softmax_policy_tensor.detach().cpu().numpy()
         predicted_ext_value=predicted_ext_value_tensor.detach().cpu().numpy()
