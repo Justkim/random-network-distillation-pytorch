@@ -68,8 +68,8 @@ class Trainer:
         logger.record_tabular("ent_coef: ", self.entropy_coef)
 
         logger.dump_tabular()
-        self.target_model = TargetModel(self.num_action).to(self.device)
-        self.predictor_model = PredictorModel(self.num_action).to(self.device)
+        self.target_model = TargetModel().to(self.device)
+        self.predictor_model = PredictorModel().to(self.device)
         self.mse_loss = nn.MSELoss()
         self.predictor_mse_loss=nn.MSELoss(reduction='none')
 
@@ -433,6 +433,9 @@ class Trainer:
             target_value = self.target_model(one_channel_observations_tensor)
             predictor_value = self.predictor_model(one_channel_observations_tensor)
             predictor_loss = self.predictor_mse_loss(predictor_value, target_value).mean(-1)
+
+
+
             mask = torch.rand(len(predictor_loss)).to(self.device)
             mask = (mask < 0.25).type(torch.FloatTensor).to(self.device)
             predictor_loss = (predictor_loss * mask).sum() / torch.max(mask.sum(), torch.Tensor([1]).to(self.device))
@@ -450,8 +453,9 @@ class Trainer:
 
             selected_policy_loss = -torch.min(clipped_policy_loss, policy_loss).mean()
             entropy = new_dist.entropy().mean()
-            loss = selected_policy_loss + (self.value_coef * value_loss) - (self.entropy_coef * entropy) + predictor_loss
             self.optimizer.zero_grad()
+            loss = selected_policy_loss + (self.value_coef * value_loss) - (self.entropy_coef * entropy) + predictor_loss
+
             loss.backward()
             # torch.nn.utils.clip_grad_norm_(self.new_model.parameters(), 0.5)
             # torch.nn.utils.clip_grad_norm_(self.predictor_model.parameters(), 0.5)

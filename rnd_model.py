@@ -6,11 +6,8 @@ import numpy as np
 
 
 class TargetModel(nn.Module):
-    def __init__(self,num_action):
+    def __init__(self):
         super(TargetModel,self).__init__()
-
-        self.num_action=num_action
-
         self.conv1 = nn.Conv2d(1, 32, kernel_size=8, stride=4) #check this input di
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
@@ -41,10 +38,8 @@ class TargetModel(nn.Module):
 
 
 class PredictorModel(nn.Module):
-    def __init__(self,num_action):
+    def __init__(self):
         super(PredictorModel,self).__init__()
-
-        self.num_action=num_action
 
         self.conv1 = nn.Conv2d(1, 32, kernel_size=8, stride=4) #check this input di
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
