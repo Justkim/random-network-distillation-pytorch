@@ -460,7 +460,7 @@ class Trainer:
 
             loss.backward()
             # torch.nn.utils.clip_grad_norm_(self.new_model.parameters(), 0.5)
-            # torch.nn.utils.clip_grad_norm_(self.predictor_model.parameters(), 0.5)
+            torch.nn.utils.clip_grad_norm_(self.predictor_model.parameters(), 0.5)
             self.optimizer.step()
             return loss, selected_policy_loss, value_loss, predictor_loss, entropy
 
