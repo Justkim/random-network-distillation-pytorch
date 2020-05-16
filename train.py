@@ -213,7 +213,7 @@ class Trainer:
             observations_array=np.array(total_observations)
             total_one_channel_observations_array=observations_array[:,3,:,:].reshape(-1,1,84,84)
             total_one_channel_observations_array = ((total_one_channel_observations_array - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5,5)
-            ext_rewards_array = np.array(total_ext_rewards)
+            ext_rewards_array = np.array(total_ext_rewards).clip(-1, 1) 
 
             dones_array = np.array(total_dones)
             ext_values_array=np.array(total_ext_values)
