@@ -52,7 +52,7 @@ class Trainer:
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.new_model = Model(self.num_action).to(self.device)
-        self.optimizer = optim.Adam(self.new_model.parameters(), lr=self.learning_rate)
+
         self.ext_adv_coef=ext_adv_coef
         self.int_adv_coef=int_adv_coef
         self.writer = SummaryWriter('logs/' + self.current_time + '/log')
@@ -72,6 +72,8 @@ class Trainer:
         self.predictor_model = PredictorModel().to(self.device)
         self.mse_loss = nn.MSELoss()
         self.predictor_mse_loss=nn.MSELoss(reduction='none')
+        self.optimizer = optim.Adam(list(self.new_model.parameters()) + list(self.predictor_model.parameters()),
+                                    lr=self.learning_rate)
 
         self.reward_rms = RunningStdMean()
         self.obs_rms = RunningStdMean(shape=(1, 1, 84, 84))
@@ -213,7 +215,7 @@ class Trainer:
             observations_array=np.array(total_observations)
             total_one_channel_observations_array=observations_array[:,3,:,:].reshape(-1,1,84,84)
             total_one_channel_observations_array = ((total_one_channel_observations_array - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5,5)
-            ext_rewards_array = np.array(total_ext_rewards).clip(-1, 1) 
+            ext_rewards_array = np.array(total_ext_rewards).clip(-1, 1)
 
             dones_array = np.array(total_dones)
             ext_values_array=np.array(total_ext_values)
@@ -467,8 +469,8 @@ class Trainer:
 
         target_value = self.target_model(input_observation) #shape: [n,512]
         predictor_value = self.predictor_model(input_observation) #shape [n,512]
-        intrinsic_reward=(target_value - predictor_value).pow(2).sum(1) / 2
-        intrinsic_reward= intrinsic_reward.detach().cpu().numpy()
+        intrinsic_reward =(target_value - predictor_value).pow(2).sum(1) / 2
+        intrinsic_reward = intrinsic_reward.detach().cpu().numpy()
         return intrinsic_reward
 
 
