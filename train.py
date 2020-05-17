@@ -13,6 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.multiprocessing import Pipe, Process
 from torch.distributions.categorical import Categorical
 import torch.nn.functional as F
+import cv2
 
 
 class Trainer:
@@ -213,8 +214,13 @@ class Trainer:
 
             # convert lists to numpy arrays
             observations_array=np.array(total_observations)
+            cv2.imshow("observations",observations_array[0][3])
             total_one_channel_observations_array=observations_array[:,3,:,:].reshape(-1,1,84,84)
+            # cv2.imshow("one channel observations",total_one_channel_observations_array[0][0])
+            # cv2.waitKey(0)
             total_one_channel_observations_array = ((total_one_channel_observations_array - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5,5)
+            cv2.imshow("one channel observations", total_one_channel_observations_array[0][0])
+            cv2.waitKey(0)
             ext_rewards_array = np.array(total_ext_rewards).clip(-1, 1)
 
             dones_array = np.array(total_dones)
@@ -265,6 +271,7 @@ class Trainer:
             actions_tensor = torch.from_numpy(np.array(actions_array)).long().to(self.device)
             advantages_tensor=torch.from_numpy(np.array(advantages_array)).float().to(self.device)
             one_channel_observations_tensor=torch.from_numpy(total_one_channel_observations_array).float().to(self.device)
+
 
             # print(observations_tensor.shape)
             # print(ext_returns_tensor.shape)
@@ -428,9 +435,6 @@ class Trainer:
 
 
 
-
-
-
             self.new_model.train()
             self.predictor_model.train()
             target_value = self.target_model(one_channel_observations_tensor)
@@ -438,9 +442,8 @@ class Trainer:
             predictor_loss = self.predictor_mse_loss(predictor_value, target_value).mean(-1)
 
 
-
             mask = torch.rand(len(predictor_loss)).to(self.device)
-            mask = (mask < 0.25).type(torch.FloatTensor).to(self.device)
+            mask = (mask < 0.1).type(torch.FloatTensor).to(self.device)
             predictor_loss = (predictor_loss * mask).sum() / torch.max(mask.sum(), torch.Tensor([1]).to(self.device))
             new_policy, ext_new_values, int_new_values = self.new_model(observations_tensor)
             ext_value_loss = self.mse_loss(ext_new_values, ext_returns_tensor)
