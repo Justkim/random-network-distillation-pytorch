@@ -11,8 +11,8 @@ flag.Load = False
 
 
 parser=argparse.ArgumentParser(description="train parser")
-parser.add_argument("--num_env", default=1, type=int, help="This is the number of workers")
-parser.add_argument("--game_steps", default=2, type=int, help="This is the number of steps in game "
+parser.add_argument("--num_env", default=2, type=int, help="This is the number of workers")
+parser.add_argument("--game_steps", default=1, type=int, help="This is the number of steps in game "
                                                                "for every training step")
 parser.add_argument("--num_epoch", default=1, type=int, help="This is the number of epoches")
 parser.add_argument("--mini_batch", default=1, type=int, help="This is mini batch size ")
@@ -33,7 +33,8 @@ parser.add_argument("--path", default="",type=str, help="path of model to load /
 parser.add_argument("--ext_adv_coef", default=0.5,type=float, help="extrinsic advantage coef")
 parser.add_argument("--int_adv_coef", default=0.5,type=float, help="intrinsic advantage coef")
 #parser.add_argument("--env_type",default="mario-complex",type=str)
-parser.add_argument("--num_pre_norm_steps", default=50, type=int, help="This is the number of steps taken before game for initializing normilization")
+parser.add_argument("--predictor_update_p",default=0.25,type=float,help="the amount of predictor update by probability")
+parser.add_argument("--num_pre_norm_steps", default=1000, type=int, help="This is the number of steps taken before game for initializing normilization")
 args=parser.parse_args()
 
 if args.play:
@@ -50,7 +51,7 @@ if flag.TRAIN:
                           , discount_factor=args.gamma, int_discount_factor=args.int_gamma, num_action=num_action, clip_range=args.clip_range, value_coef=args.value_coef,
                           save_interval=args.save_int,
                           log_interval=args.log_int,
-                          entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_num=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path, ext_adv_coef=args.ext_adv_coef,int_adv_coef=args.int_adv_coef,num_pre_norm_steps=args.num_pre_norm_steps)
+                          entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_num=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path, ext_adv_coef=args.ext_adv_coef,int_adv_coef=args.int_adv_coef,num_pre_norm_steps=args.num_pre_norm_steps,predictor_update_proportion=args.predictor_update_p)
     new_trainer.collect_experiance_and_train()
 elif flag.PLAY:
    

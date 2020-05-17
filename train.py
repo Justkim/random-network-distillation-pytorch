@@ -19,7 +19,7 @@ import cv2
 class Trainer:
     def __init__(self,num_training_steps,num_env,num_game_steps,num_epoch,
                  learning_rate,discount_factor,int_discount_factor, num_action,
-                 value_coef,clip_range,save_interval,log_interval,entropy_coef,lam,mini_batch_num,num_action_repeat,load_path,ext_adv_coef,int_adv_coef,num_pre_norm_steps):
+                 value_coef,clip_range,save_interval,log_interval,entropy_coef,lam,mini_batch_num,num_action_repeat,load_path,ext_adv_coef,int_adv_coef,num_pre_norm_steps, predictor_update_proportion):
         self.training_steps=num_training_steps
         self.num_epoch=num_epoch
         self.learning_rate=learning_rate
@@ -34,6 +34,7 @@ class Trainer:
         self.num_action=num_action
         self.num_pre_norm_steps=num_pre_norm_steps
         self.int_discount_factor=int_discount_factor
+        self.predictor_update_proportion=predictor_update_proportion
 
         assert self.batch_size % self.mini_batch_num == 0
         self.mini_batch_size=int(self.batch_size / self.mini_batch_num)
@@ -214,13 +215,10 @@ class Trainer:
 
             # convert lists to numpy arrays
             observations_array=np.array(total_observations)
-            cv2.imshow("observations",observations_array[0][3])
             total_one_channel_observations_array=observations_array[:,3,:,:].reshape(-1,1,84,84)
             # cv2.imshow("one channel observations",total_one_channel_observations_array[0][0])
             # cv2.waitKey(0)
             total_one_channel_observations_array = ((total_one_channel_observations_array - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5,5)
-            cv2.imshow("one channel observations", total_one_channel_observations_array[0][0])
-            cv2.waitKey(0)
             ext_rewards_array = np.array(total_ext_rewards).clip(-1, 1)
 
             dones_array = np.array(total_dones)
@@ -443,7 +441,7 @@ class Trainer:
 
 
             mask = torch.rand(len(predictor_loss)).to(self.device)
-            mask = (mask < 0.1).type(torch.FloatTensor).to(self.device)
+            mask = (mask < self.predictor_update_proportion).type(torch.FloatTensor).to(self.device)
             predictor_loss = (predictor_loss * mask).sum() / torch.max(mask.sum(), torch.Tensor([1]).to(self.device))
             new_policy, ext_new_values, int_new_values = self.new_model(observations_tensor)
             ext_value_loss = self.mse_loss(ext_new_values, ext_returns_tensor)
