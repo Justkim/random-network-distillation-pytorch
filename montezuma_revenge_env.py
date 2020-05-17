@@ -39,8 +39,8 @@ class MontezumaRevenge(Process):
             for i in range(0, self.action_re):
                 obs,rew, done, info = self.env.step(action)
                 reward+=rew
-                if info['ale.lives'] < 6:
-                    done = True
+               # if info['ale.lives'] < 6:
+                #    done = True
                 if self.steps>self.max_steps:
                     done=True
                 if done:
