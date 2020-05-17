@@ -50,11 +50,11 @@ class PredictorModel(nn.Module):
 
         for p in self.modules():
             if isinstance(p, nn.Conv2d):
-                init.orthogonal_(p.weight, np.sqrt(2))
+                init.orthogonal_(p.weight, np.sqrt(3))
                 p.bias.data.zero_()
 
             if isinstance(p, nn.Linear):
-                init.orthogonal_(p.weight, np.sqrt(2))
+                init.orthogonal_(p.weight, np.sqrt(3))
                 p.bias.data.zero_()
 
     def forward(self,input_observations):
