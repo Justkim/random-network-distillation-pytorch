@@ -164,7 +164,7 @@ class Trainer:
 
                 with torch.no_grad():
                     current_observations_tensor = torch.from_numpy(np.array(current_observations)).float().to(self.device)
-                    decided_actions, predicted_ext_values, predicted_int_values = self.new_model.step(current_observations_tensor)
+                    decided_actions, predicted_ext_values, predicted_int_values = self.new_model.step(current_observations_tensor/255.)
                     one_channel_observations=np.array(current_observations)[:,3,:,:].reshape(-1,1,84,84)
                     one_channel_observations = (
                                 (one_channel_observations - self.obs_rms.mean) / np.sqrt(self.obs_rms.var)).clip(-5, 5)
@@ -206,7 +206,7 @@ class Trainer:
             # next state value, required for computing advantages
             with torch.no_grad():
                 current_observations_tensor = torch.from_numpy(np.array(current_observations)).float().to(self.device)
-                decided_actions, predicted_ext_values,predicted_int_values = self.new_model.step(current_observations_tensor)
+                decided_actions, predicted_ext_values,predicted_int_values = self.new_model.step(current_observations_tensor/255.)
 
             total_int_values.append(predicted_int_values)
             total_ext_values.append(predicted_ext_values)
@@ -259,6 +259,7 @@ class Trainer:
 
 
             observations_tensor=torch.from_numpy(np.array(observations_array)).float().to(self.device)
+            observations_tensor=observations_tensor/255.
             ext_returns_tensor=torch.from_numpy(np.array(ext_returns_array)).float().to(self.device)
             int_returns_tensor = torch.from_numpy(np.array(int_returns_array)).float().to(self.device)
             actions_tensor = torch.from_numpy(np.array(actions_array)).long().to(self.device)
