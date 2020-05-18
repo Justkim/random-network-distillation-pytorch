@@ -74,8 +74,9 @@ class Trainer:
         self.predictor_model = PredictorModel().to(self.device)
         self.mse_loss = nn.MSELoss()
         self.predictor_mse_loss=nn.MSELoss(reduction='none')
-        self.optimizer = optim.Adam(list(self.new_model.parameters()) + list(self.predictor_model.parameters()),
+        self.optimizer = optim.Adam(self.new_model.parameters(),
                                     lr=self.learning_rate)
+        self.predictor_optimizer=optim.Adam(self.predictor_model.parameters(),lr=1e-5)
 
         self.reward_rms = RunningStdMean()
         self.obs_rms = RunningStdMean(shape=(1, 1, 84, 84))
@@ -459,11 +460,13 @@ class Trainer:
             selected_policy_loss = -torch.min(clipped_policy_loss, policy_loss).mean()
             entropy = new_dist.entropy().mean()
             self.optimizer.zero_grad()
-            loss = selected_policy_loss + (self.value_coef * value_loss) - (self.entropy_coef * entropy) + predictor_loss
-
+            self.predictor_optimizer.zero_grad()
+            loss = selected_policy_loss + (self.value_coef * value_loss) - (self.entropy_coef * entropy)
             loss.backward()
+            predictor_loss.backward()
             # torch.nn.utils.clip_grad_norm_(self.new_model.parameters(), 0.5)
             global_grad_norm_(list(self.new_model.parameters()) + list(self.target_model.parameters()))
+            self.predictor_optimizer.step()
             self.optimizer.step()
             return loss, selected_policy_loss, value_loss, predictor_loss, entropy
 
