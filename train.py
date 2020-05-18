@@ -74,9 +74,9 @@ class Trainer:
         self.predictor_model = PredictorModel().to(self.device)
         self.mse_loss = nn.MSELoss()
         self.predictor_mse_loss=nn.MSELoss(reduction='none')
-        self.optimizer = optim.Adam(self.new_model.parameters(),
+        self.optimizer = optim.Adam(list(self.new_model.parameters())+list(self.predictor_model.parameters()),
                                     lr=self.learning_rate)
-        self.predictor_optimizer=optim.Adam(self.predictor_model.parameters(),lr=1e-5)
+
 
         self.reward_rms = RunningStdMean()
         self.obs_rms = RunningStdMean(shape=(1, 1, 84, 84))
@@ -230,7 +230,8 @@ class Trainer:
             int_rewards_array = np.stack(total_int_rewards)
 
             total_reward_per_env = np.array([self.reward_filter.update(reward_per_step) for reward_per_step in
-                                             int_rewards_array])
+                                             int_rewards_array.T])
+
             mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
             self.reward_rms.update_from_mean_std(mean, std ** 2, count)
 
@@ -410,6 +411,9 @@ class Trainer:
         advantages=np.array(advantages)
         advantages = advantages.flatten()
         values=values[:-1]
+        # print("values shape",values.shape)
+        # print("advantages shape",advantages.shape)
+        # exit()
         returns=advantages+values.flatten()
         if flag.DEBUG:
             print("all advantages are",advantages)
@@ -460,13 +464,13 @@ class Trainer:
             selected_policy_loss = -torch.min(clipped_policy_loss, policy_loss).mean()
             entropy = new_dist.entropy().mean()
             self.optimizer.zero_grad()
-            self.predictor_optimizer.zero_grad()
-            loss = selected_policy_loss + (self.value_coef * value_loss) - (self.entropy_coef * entropy)
+
+            loss = selected_policy_loss + (self.value_coef * value_loss) - (self.entropy_coef * entropy) + predictor_loss
             loss.backward()
-            predictor_loss.backward()
+
             # torch.nn.utils.clip_grad_norm_(self.new_model.parameters(), 0.5)
-            global_grad_norm_(list(self.new_model.parameters()) + list(self.target_model.parameters()))
-            self.predictor_optimizer.step()
+            global_grad_norm_(list(self.new_model.parameters()) + list(self.predictor_model.parameters()))
+
             self.optimizer.step()
             return loss, selected_policy_loss, value_loss, predictor_loss, entropy
 
