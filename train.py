@@ -228,9 +228,9 @@ class Trainer:
             int_values_array = np.array(total_int_values)
             actions_array = np.array(total_actions)
             int_rewards_array = np.stack(total_int_rewards)
-
-            total_reward_per_env = np.array([self.reward_filter.update(reward_per_step) for reward_per_step in
+            total_reward_per_env = np.array([self.reward_filter.update(reward_per_env) for reward_per_env in
                                              int_rewards_array.T])
+
 
             mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
             self.reward_rms.update_from_mean_std(mean, std ** 2, count)
