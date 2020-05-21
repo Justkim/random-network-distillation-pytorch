@@ -311,12 +311,13 @@ class Trainer:
                     experience_slice=(arr[index_slice] for arr in (observations_tensor,ext_returns_tensor,int_returns_tensor,actions_tensor,
                                                                    advantages_tensor,one_channel_observations_tensor))
 
-                    loss, policy_loss, value_loss, predictor_loss, entropy=self.train_model(*experience_slice,old_log_prob[index_slice])
+                    loss, policy_loss, value_loss, predictor_loss, entropy =self.train_model(*experience_slice,old_log_prob[index_slice])
+                    # print("max prob",new_policy.detach().cpu().numpy().max(1))
                     if epoch==self.num_epoch-1:
                         loss=loss.detach().cpu().numpy()
                         policy_loss = policy_loss.detach().cpu().numpy()
-                        value_loss = value_loss.detach().cpu().numpy()
                         predictor_loss = predictor_loss.detach().cpu().numpy()
+                        value_loss = value_loss.detach().cpu().numpy()
                         entropy = entropy.detach().cpu().numpy()
                         loss_avg.append(loss)
                         policy_loss_avg.append(policy_loss)
@@ -331,12 +332,13 @@ class Trainer:
             value_loss_avg_result=np.array(value_loss_avg).mean()
             entropy_avg_result=np.array(entropy_avg).mean()
             predictor_loss_avg_result = np.array(predictor_loss_avg).mean()
-            print("training step {:03d}, Epoch {:03d}: Loss: {:.3f}, policy loss: {:.3f}, value loss: {:.3f},predictor loss: {:.3f}, entopy: {:.3f} ".format(train_step,epoch,
+            print("training step {:03d}, Epoch {:03d}: Loss: {:.3f}, policy loss: {:.3f}, value loss: {:.3f},predictor loss: {:.3f}, entropy: {:.3f} ".format(train_step,epoch,
                                                                          loss_avg_result,
                                                                         policy_loss_avg_result,
                                                                          value_loss_avg_result,
                                                                         predictor_loss_avg_result,
                                                                          entropy_avg_result))
+
 
             if flag.TENSORBOARD_AVALAIBLE:
                         self.writer.add_scalar('loss_avg', loss_avg_result, train_step)
@@ -396,6 +398,7 @@ class Trainer:
         advantages = []
         last_advantage = 0
         for step in reversed(range(self.num_game_steps)):
+
             if int_flag==1:
                 is_there_a_next_state = 1
             else:
@@ -454,7 +457,8 @@ class Trainer:
             ext_value_loss = self.mse_loss(ext_new_values, ext_returns_tensor)
             int_value_loss = self.mse_loss(int_new_values, int_returns_tensor)
             value_loss = ext_value_loss + int_value_loss
-            new_dist= Categorical(F.softmax(new_policy,dim=1))
+            softmax_policy=F.softmax(new_policy,dim=1)
+            new_dist= Categorical(softmax_policy)
             new_log_prob = new_dist.log_prob(actions_tensor)
 
             ratio = torch.exp(new_log_prob - old_log_prob)

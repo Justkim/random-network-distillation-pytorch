@@ -63,9 +63,9 @@ class Model(nn.Module):
     def step(self,observations):
         policy_tensor, predicted_ext_value_tensor, predicted_int_value_tensor=self(observations)
         softmax_policy_tensor = F.softmax(input=policy_tensor)
-        softmax_policy = softmax_policy_tensor.detach().cpu().numpy()
-        predicted_ext_value=predicted_ext_value_tensor.detach().cpu().numpy()
-        predicted_int_value = predicted_int_value_tensor.detach().cpu().numpy()
+        softmax_policy = softmax_policy_tensor.data().cpu().numpy()
+        predicted_ext_value=predicted_ext_value_tensor.data.cpu().numpy()
+        predicted_int_value = predicted_int_value_tensor.data.cpu().numpy()
         randoms = np.expand_dims(np.random.rand(softmax_policy.shape[0]), axis=1)
         action = (softmax_policy.cumsum(axis=1) > randoms).argmax(axis=1)
         return action,predicted_ext_value, predicted_int_value
