@@ -193,7 +193,7 @@ class Trainer:
                     step_rewards.append(reward)
                     step_dones.append(done)
                 sample_ext_reward += step_rewards[0]
-                sample_int_reward+=int_reward[0]
+                sample_int_reward += int_reward[0]
 
 
                 if step_dones[0]:
@@ -248,6 +248,7 @@ class Trainer:
             # print("int_values", int_values_array.shape)
             # print("dones",dones_array.shape)
             # print("actions",actions_array.shape)
+            # int_rewards_array=np.random.rand(3,2)
 
             ext_advantages_array,ext_returns_array=self.compute_advantage(ext_rewards_array,ext_values_array,dones_array,0)
             int_advantages_array, int_returns_array = self.compute_advantage(int_rewards_array, int_values_array,
@@ -396,7 +397,7 @@ class Trainer:
         else:
             discount_factor=self.discount_factor
         advantages = []
-        last_advantage = 0
+        advantage = 0
         for step in reversed(range(self.num_game_steps)):
 
             if int_flag==1:
@@ -405,8 +406,8 @@ class Trainer:
                  is_there_a_next_state = 1.0 - dones[step]
             delta = rewards[step] + (is_there_a_next_state * discount_factor * values[step + 1]) - values[step]
             if flag.USE_GAE:
-                    advantage = last_advantage = delta + discount_factor * \
-                                                 self.lam * is_there_a_next_state * last_advantage
+                    advantage = delta + discount_factor * \
+                                                 self.lam * is_there_a_next_state * advantage
                     advantages.append(advantage)
             else:
                     advantages.append(delta)
@@ -485,7 +486,7 @@ class Trainer:
         target_value = self.target_model(input_observation) #shape: [n,512]
         predictor_value = self.predictor_model(input_observation) #shape [n,512]
         intrinsic_reward =(target_value - predictor_value).pow(2).sum(1) / 2
-        intrinsic_reward = intrinsic_reward.detach().cpu().numpy()
+        intrinsic_reward = intrinsic_reward.data.cpu().numpy()
         return intrinsic_reward
 
 
