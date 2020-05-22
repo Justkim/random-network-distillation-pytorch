@@ -12,7 +12,7 @@ cv2.ocl.setUseOpenCL(False)
 
 
 class MarioEnv(Process):
-    def __init__(self,env_id,child,action_re,p):
+    def __init__(self,env_id,child,action_re,p,max_steps):
         super(MarioEnv, self).__init__()
         self.child = child
         self.env = self.make_env(0)
@@ -23,7 +23,7 @@ class MarioEnv(Process):
         self.ep_num=0
         self.env_id=env_id
         self.progress_reward=0
-
+        self.max_steps=max_steps
 
 
     def make_env(self,env_idx):
@@ -36,9 +36,9 @@ class MarioEnv(Process):
         levelList = ['SuperMarioBros-v0', 'SuperMarioBros-2-1-v0', 'SuperMarioBros-3-1-v0', 'SuperMarioBros-4-1-v0',
                      'SuperMarioBros-5-1-v0', 'SuperMarioBros-6-1-v0', 'SuperMarioBros-7-1-v0', 'SuperMarioBros-8-1-v0']
         env = gym_super_mario_bros.make(levelList[env_idx])
-        if flag.ENV == "mario-complex":
+        if flag.ENV == "complex-mario":
             env = BinarySpaceToDiscreteSpaceEnv(env, COMPLEX_MOVEMENT)
-        elif flag.ENV == "mario-simple":
+        elif flag.ENV == "simple-mario":
             env = BinarySpaceToDiscreteSpaceEnv(env, SIMPLE_MOVEMENT)
         else:
             print("env type error: env not recognized")
@@ -51,8 +51,7 @@ class MarioEnv(Process):
     def run(self):
         while True:
             action= self.child.recv()
-
-
+            reward=0
             if flag.STICKY_ACTION:
                 if(np.random.rand()<=self.p):
                     action=self.last_action
@@ -60,8 +59,15 @@ class MarioEnv(Process):
             global progress_reward
             for i in range(0,self.action_re):
                 obs,progress_reward,done,info = self.env.step(action)
+                if info['flag_get'] == True:
+                    rew = 1
+                else:
+                    rew = 0
+                reward+=rew
                 if info['life']<2:
                     done=True
+                if self.steps > self.max_steps:
+                    done = True
                 if done:
                     print("env: " + str(self.env_id) + " episode: " + str(self.ep_num) +" progress; "+str(self.progress_reward)+ " max_x: " + str(
                         info['x_pos']))
@@ -73,10 +79,7 @@ class MarioEnv(Process):
             progress_reward=progress_reward/15
             self.progress_reward+=progress_reward
 
-            if info['flag_get'] == True:
-                reward = 1
-            else:
-                reward = 0
+
 
             if flag.SHOW_GAME:
                 self.env.render()
