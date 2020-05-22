@@ -6,6 +6,7 @@ import numpy as np
 import flag
 import datetime
 import montezuma_revenge_env
+import mario_env
 from baselines import logger
 from rnd_model import TargetModel,PredictorModel
 from utils import RunningStdMean,RewardForwardFilter,global_grad_norm_
@@ -19,7 +20,7 @@ import cv2
 class Trainer:
     def __init__(self,num_training_steps,num_env,num_game_steps,num_epoch,
                  learning_rate,discount_factor,int_discount_factor, num_action,
-                 value_coef,clip_range,save_interval,log_interval,entropy_coef,lam,mini_batch_num,num_action_repeat,load_path,ext_adv_coef,int_adv_coef,num_pre_norm_steps, predictor_update_proportion):
+                 value_coef,clip_range,save_interval,log_interval,entropy_coef,lam,mini_batch_num,num_action_repeat,load_path,ext_adv_coef,int_adv_coef,num_pre_norm_steps, predictor_update_proportion,env_type):
         self.training_steps=num_training_steps
         self.num_epoch=num_epoch
         self.learning_rate=learning_rate
@@ -51,6 +52,7 @@ class Trainer:
         self.value_coef = value_coef
         self.entropy_coef = entropy_coef
         self.load_path=load_path
+        self.env_type=env_type
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.new_model = Model(self.num_action).to(self.device)
@@ -111,7 +113,11 @@ class Trainer:
 
         for i in range(self.num_env):
             parent,child = Pipe()
-            new_env = montezuma_revenge_env.MontezumaRevenge(i,child,self.num_action_repeat,0.25,4000)
+            if self.env_type=="simple-mario":
+                new_env = mario_env.MarioEnv(i,child,self.num_action_repeat,0.25,4000)
+            elif self.env_type=="MR":
+                new_env = montezuma_revenge_env.MontezumaRevenge(i, child, self.num_action_repeat, 0.25, 4000)
+
             new_env.start()
             envs.append(new_env)
             parents.append(parent)
@@ -482,7 +488,6 @@ class Trainer:
 
 
     def get_intrinsic_rewards(self,input_observation):
-
         target_value = self.target_model(input_observation) #shape: [n,512]
         predictor_value = self.predictor_model(input_observation) #shape [n,512]
         intrinsic_reward =(target_value - predictor_value).pow(2).sum(1) / 2
