@@ -39,13 +39,14 @@ class MontezumaRevenge(Process):
             for i in range(0, self.action_re):
                 obs,rew, done, info = self.env.step(action)
                 reward+=rew
-               # if info['ale.lives'] < 6:
+                # if info['ale.lives'] < 6:
                 #    done = True
                 if self.steps>self.max_steps:
                     done=True
                 if done:
                     #print("env: " + str(self.env_id) + " episode: "+ str(self.ep_num))
                     self.ep_num += 1
+                    self.steps=0
                     obs = self.env.reset()
                     break
 
