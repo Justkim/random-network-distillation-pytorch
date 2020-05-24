@@ -45,8 +45,10 @@ if args.load:
 
 if args.env_type=="simple-mario":
     num_action=7
+    flag.ENV="simple-mario"
 elif args.env_type=="MR":
     num_action=18 #number of actions for montezuma revenge
+    flag.ENV="MR"
 
 
 
