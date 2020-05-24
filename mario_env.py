@@ -107,19 +107,7 @@ class PreprocessFrame(gym.ObservationWrapper):
     def observation(self, frame):
         # Set frame to gray
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-
-
-        # frame = frame[35: , :,None]
-
-
         frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
-        # frame = frame[:, :, None]
-        frame=frame/255.0
-        # frame=frame/255
-        # if flag.DEBUG:
-        #     cv2.imshow("frame",frame)
-        #     cv2.waitKey(0)
-
         return self.stack_frames(frame)
 
     def stack_frames(self,new_frame):
