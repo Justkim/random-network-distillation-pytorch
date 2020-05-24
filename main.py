@@ -58,7 +58,7 @@ if flag.TRAIN:
                           , discount_factor=args.gamma, int_discount_factor=args.int_gamma, num_action=num_action, clip_range=args.clip_range, value_coef=args.value_coef,
                           save_interval=args.save_int,
                           log_interval=args.log_int,
-                          entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_num=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path, ext_adv_coef=args.ext_adv_coef,int_adv_coef=args.int_adv_coef,num_pre_norm_steps=args.num_pre_norm_steps,predictor_update_proportion=args.predictor_update_p, env_type=args.env_type)
+                          entropy_coef=args.ent_coef, lam=args.lambda_gae, mini_batch_num=args.mini_batch, num_action_repeat=args.action_re,load_path=args.path, ext_adv_coef=args.ext_adv_coef,int_adv_coef=args.int_adv_coef,num_pre_norm_steps=args.num_pre_norm_steps,predictor_update_proportion=args.predictor_update_p)
     new_trainer.collect_experiance_and_train()
 elif flag.PLAY:
    
