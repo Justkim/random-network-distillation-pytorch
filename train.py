@@ -129,7 +129,7 @@ class Trainer:
                 parents[i].send(actions[i])
             current_observations=[]
             for i in range(0,len(parents)):
-                obs,_, rew, done = parents[i].recv()
+                obs,rew, done = parents[i].recv()
                 current_observations.append(obs)
         else:
         #normalize observations
@@ -143,7 +143,7 @@ class Trainer:
                     parents[i].send(actions[i])
                 current_observations=[]
                 for i in range(0,len(parents)):
-                    obs,_, rew , done = parents[i].recv()
+                    obs, rew , done = parents[i].recv()
                     current_observations.append(obs)
                 observations_to_normalize.extend(current_observations)
                 if(len(observations_to_normalize)%(self.num_game_steps*self.num_env)==0):

@@ -84,7 +84,7 @@ class MarioEnv(Process):
             if flag.SHOW_GAME:
                 self.env.render()
             self.steps += 1
-            self.child.send([obs,progress_reward, reward,done])
+            self.child.send([obs, reward,done])
 
 
 
