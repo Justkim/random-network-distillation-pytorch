@@ -24,6 +24,7 @@ class MarioEnv(Process):
         self.env_id=env_id
         self.progress_reward=0
         self.max_steps=max_steps
+        self.steps=0
 
 
     def make_env(self,env_idx):
@@ -74,16 +75,15 @@ class MarioEnv(Process):
                     self.ep_num += 1
                     self.progress_reward=0
                     obs = self.env.reset()
+                    self.steps=0
                     break
 
             progress_reward=progress_reward/15
             self.progress_reward+=progress_reward
 
-
-
             if flag.SHOW_GAME:
                 self.env.render()
-
+            self.steps += 1
             self.child.send([obs,progress_reward, reward,done])
 
 
