@@ -115,7 +115,7 @@ class Trainer:
             if flag.ENV=="simple-mario":
                 new_env = mario_env.MarioEnv(i,child,self.num_action_repeat,0.25,18000)
             elif flag.ENV=="MR":
-                new_env = montezuma_revenge_env.MontezumaRevenge(i, child, self.num_action_repeat, 0.25, 4000)
+                new_env = montezuma_revenge_env.MontezumaRevenge(i, child, self.num_action_repeat, 0.25, 6000)
 
             new_env.start()
             envs.append(new_env)
