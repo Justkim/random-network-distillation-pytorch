@@ -1,12 +1,12 @@
-DEBUG=False
-SHOW_GAME=False
-LOAD=False
-USE_GAE=True
-TENSORBOARD_AVALAIBLE=True
-TRAIN=True
-ON_COLAB=False
-USE_STANDARD_ADV=False
-VALUE_CLIP=False
-PLAY=False
-STICKY_ACTION=True
-ENV="MR"
+# This file is used to store some global variables.
+DEBUG = False
+SHOW_GAME = False
+USE_GAE = True  # use generalized advantage estimation
+TENSORBOARD_AVALAIBLE = True
+TRAIN = False
+LOAD = True
+PLAY = True
+USE_STANDARD_ADV = False
+VALUE_CLIP = False
+STICKY_ACTION = True
+ENV = "MR"
