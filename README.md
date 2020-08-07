@@ -5,14 +5,14 @@
 
 
 ## Setup
-to run the code, first install the required packages by running:   
+To run the program, first install the required packages by executing:   
 
 ```shell
-$ python3 setup.py install
+$ pip3 install -r requirements.txt
 ```
 
-## inference 
-run the program with pretrained model and see the agent playing:
+## Play 
+Run the program with pretrained model and see the agent playing:
 
 ```shell
 $ python3 main.py --play --path models/pretrained_model
@@ -21,12 +21,14 @@ $ python3 main.py --play --path models/pretrained_model
 ![trained agent playing](demo/mr_playing.gif)
    
 
-   
 
-this diagram shows how entropy decreases. the agent starts by total random movements and learns a stochastic policy after being trained.   
-![entropy](demo/entropy.png?raw=true "Entropy ")   
 
-the pretrained model `models/pretrained_model` is obtained by training with the following settings:   
+
+![entropy](demo/entropy.png?raw=true "Entropy ")  
+x-axis: train steps, y-axis: entropy
+this diagram shows how entropy decreases. the agent starts by total random movements and learns a stochastic policy after being trained.  
+
+the pretrained model `models/pretrained_model.pth` is obtained by training with the following settings:   
 
 | variable |  value| 
 |:-----|:--------:|
@@ -54,12 +56,12 @@ You can train from a model from scratch by using the following command. Note tha
 
 Some useful diagrams are stored in tensorboard format while training.
 ```shell 
-python3 main.py --num_env 64 --train_steps 20000000 --predictor_update_p 0.25 --num_pre_norm_steps 10 --game_steps 128 --num_epoch 4 --mini_batch 2 --save_int 100 
+python3 main.py --train --num_env 64 --train_steps 20000000 --predictor_update_p 0.25 --num_pre_norm_steps 10 --game_steps 128 --num_epoch 4 --mini_batch 2 --save_int 100 
 ```
 Train from a checkpoint:
 
 ```shell 
-python3 main.py --path logs/desired_checkpoint --num_env 64 --train_steps 20000000 --predictor_update_p 0.25 --num_pre_norm_steps 10 --game_steps 128 --num_epoch 4 --mini_batch 2 --save_int 100 
+python3 main.py ---train --path logs/desired_checkpoint --num_env 64 --train_steps 20000000 --predictor_update_p 0.25 --num_pre_norm_steps 10 --game_steps 128 --num_epoch 4 --mini_batch 2 --save_int 100 
 ```
 
 
