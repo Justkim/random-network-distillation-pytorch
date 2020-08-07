@@ -15,7 +15,7 @@ $ pip3 install -r requirements.txt
 Run the program with pretrained model and see the agent playing:
 
 ```shell
-$ python3 main.py --play --path models/pretrained_model
+$ python3 main.py --play --path models/pretrained_model.pth
 ```
   
 ![trained agent playing](demo/mr_playing.gif)
@@ -56,12 +56,12 @@ You can train from a model from scratch by using the following command. Note tha
 
 Some useful diagrams are stored in tensorboard format while training.
 ```shell 
-python3 main.py --train --num_env 64 --train_steps 20000000 --predictor_update_p 0.25 --num_pre_norm_steps 10 --game_steps 128 --num_epoch 4 --mini_batch 2 --save_int 100 
+python3 main.py --train --num_env 64 --train_steps 12000 --predictor_update_p 0.25 --num_pre_norm_steps 10 --game_steps 128 --num_epoch 4 --mini_batch 2 --save_int 100 
 ```
 Train from a checkpoint:
 
 ```shell 
-python3 main.py ---train --path logs/desired_checkpoint --num_env 64 --train_steps 20000000 --predictor_update_p 0.25 --num_pre_norm_steps 10 --game_steps 128 --num_epoch 4 --mini_batch 2 --save_int 100 
+python3 main.py ---train --path logs/desired_checkpoint --num_env 64 --train_steps 12000 --predictor_update_p 0.25 --num_pre_norm_steps 10 --game_steps 128 --num_epoch 4 --mini_batch 2 --save_int 100 
 ```
 
 
