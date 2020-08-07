@@ -5,10 +5,10 @@ import argparse
 
 
 parser = argparse.ArgumentParser(description="train parser")
-parser.add_argument("--num_env", default=2, type=int,
+parser.add_argument("--num_env", default=64, type=int,
                     help="This is the number of workers")
-parser.add_argument("--game_steps", default=3, type=int,
-                    help="This is the number of steps in game "
+parser.add_argument("--game_steps", default=128, type=int,
+                    help="This is the number of steps in one environment "
                          "for every training step")
 parser.add_argument("--num_epoch", default=4, type=int,
                     help="This is the number of epoches")
@@ -28,8 +28,6 @@ parser.add_argument("--value_coef", default=0.5, type=float,
                     help="This is value coef")
 parser.add_argument("--ent_coef", default=0.001, type=float,
                     help="This is entropy coef")
-parser.add_argument("--log_int", default=100, type=int,
-                    help="This is log interval")
 parser.add_argument("--save_int", default=500, type=int,
                     help="This is save interval")
 parser.add_argument("--action_re", default=4, type=int,
@@ -50,8 +48,10 @@ parser.add_argument("--env_type", default="MR", type=str)
 parser.add_argument("--predictor_update_p", default=1, type=float,
                     help="the amount of predictor update by probability")
 parser.add_argument("--num_pre_norm_steps", default=1000, type=int,
-                    help="the number of steps taken before game is this variable *  \
-                    for initializing normilization")
+                    help="the number of steps taken before game"
+                    "for initializing normilization"
+                    " is: this variable * game_steps"
+                    )
 
 
 args = parser.parse_args()
@@ -89,7 +89,6 @@ if flag.TRAIN:
                           num_action=num_action, clip_range=args.clip_range,
                           value_coef=args.value_coef,
                           save_interval=args.save_int,
-                          log_interval=args.log_int,
                           entropy_coef=args.ent_coef, lam=args.lambda_gae,
                           mini_batch_num=args.mini_batch,
                           num_action_repeat=args.action_re,

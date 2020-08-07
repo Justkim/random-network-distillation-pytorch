@@ -20,7 +20,7 @@ class Trainer:
     def __init__(self, num_training_steps, num_env, num_game_steps, num_epoch,
                  learning_rate, discount_factor, int_discount_factor,
                  num_action,
-                 value_coef, clip_range, save_interval, log_interval,
+                 value_coef, clip_range, save_interval,
                  entropy_coef, lam, mini_batch_num, num_action_repeat,
                  load_path, ext_adv_coef, int_adv_coef, num_pre_norm_steps,
                  predictor_update_proportion):
@@ -46,7 +46,7 @@ class Trainer:
         log_dir = 'logs/' + self.current_time + '/log'
         self.save_interval = save_interval
         self.lam = lam
-        self.log_interval = log_interval
+
 
         self.num_action_repeat = num_action_repeat
         self.clip_range = clip_range
