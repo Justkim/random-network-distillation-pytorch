@@ -1,6 +1,6 @@
 # Random Network Distilation 
 
-> This is an implementation of Random network distillation on Montezuma's Revenge using pytorch.   
+> This is an implementation of Random network distillation on Montezuma's Revenge using Pytorch.   
 > paper link: https://arxiv.org/abs/1810.12894   
 
 
@@ -25,7 +25,7 @@ $ python3 main.py --play --path models/pretrained_model.pth
 
 
 ![entropy](demo/entropy.png?raw=true "Entropy ")  
-x-axis: train steps, y-axis: entropy
+x-axis: train steps, y-axis: entropy   
 this diagram shows how entropy decreases. the agent starts by total random movements and learns a stochastic policy after being trained.  
 
 The pretrained model `models/pretrained_model.pth` is obtained by training with the following settings:   
