@@ -17,10 +17,10 @@ Run the program with pretrained model and see the agent playing:
 ```shell
 $ python3 main.py --play --path models/pretrained_model.pth
 ```
-  
-![trained agent playing](demo/mr_playing.gif)
-   
-
+ 
+<p align="center">
+  <img src="demo/mr_playing.gif" />
+</p>
 
 
 
@@ -28,7 +28,7 @@ $ python3 main.py --play --path models/pretrained_model.pth
 x-axis: train steps, y-axis: entropy
 this diagram shows how entropy decreases. the agent starts by total random movements and learns a stochastic policy after being trained.  
 
-the pretrained model `models/pretrained_model.pth` is obtained by training with the following settings:   
+The pretrained model `models/pretrained_model.pth` is obtained by training with the following settings:   
 
 | variable |  value| 
 |:-----|:--------:|
